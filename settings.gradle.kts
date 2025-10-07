@@ -1,4 +1,5 @@
 rootProject.name = "BlogPlatform"
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 pluginManagement {
     includeBuild("build-logic")
@@ -21,8 +22,8 @@ dependencyResolutionManagement {
 }
 
 include(":example_service")
-findProject(":example_service")?.name = "example_service"
-include(":core")
-findProject(":core")?.name = "core"
-include(":client")
-findProject(":client")?.name = "client"
+//findProject(":example_service")?.name = "example_service"
+include(":core:client")
+//findProject(":core:client")?.name = "client"
+include(":core:common")
+//findProject(":core:common")?.name = "common"

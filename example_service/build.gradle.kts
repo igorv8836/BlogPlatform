@@ -8,11 +8,10 @@ application {
     mainClass = "io.ktor.server.netty.EngineMain"
 }
 
-kotlin {
-    jvmToolchain(21)
-}
-
 dependencies {
+    api(projects.core.common)
+    api(projects.core.client)
+
     implementation(libs.bundles.server.ktor.core)
     implementation(libs.bundles.server.database)
 

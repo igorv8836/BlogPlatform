@@ -4,10 +4,11 @@ plugins {
     alias(libs.plugins.ktor)
 }
 
-kotlin {
-
-}
-
 dependencies {
-    api(libs.kotlinx.serialization.json)
+    api(projects.core.common)
+
+    api(libs.bundles.ktor.client)
+
+    api(libs.koin.ktor)
+    api(libs.koin.core)
 }
