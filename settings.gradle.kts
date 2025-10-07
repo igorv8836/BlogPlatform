@@ -22,8 +22,8 @@ dependencyResolutionManagement {
 }
 
 include(":example_service")
-//findProject(":example_service")?.name = "example_service"
-include(":core:client")
-//findProject(":core:client")?.name = "client"
-include(":core:common")
-//findProject(":core:common")?.name = "common"
+include(":shared:client")
+include(":shared:common")
+
+include(":services:comments_service")
+include(":services:support_service")

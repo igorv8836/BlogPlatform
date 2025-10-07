@@ -1,6 +1,6 @@
 package com.example
 
-data class ServiceConfig(
+data class ClientConfig(
     val baseUrl: String,
     val timeouts: Timeouts = Timeouts(),
 ) {

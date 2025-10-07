@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  db:
+  comments_db:
     image: postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -8,3 +8,22 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
+    volumes:
+      - comments_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  support_db:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5433:5432"
+    volumes:
+      - support_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  comments_data:
+  support_data:

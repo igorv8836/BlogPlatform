@@ -11,7 +11,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 
-fun createServiceHttpClient(cfg: ServiceConfig): HttpClient = HttpClient(CIO) {
+fun createServiceHttpClient(cfg: ClientConfig): HttpClient = HttpClient(CIO) {
     expectSuccess = false
 
     install(ContentNegotiation) {

@@ -12,7 +12,7 @@ subprojects {
 
 conventionalCommits {
     scopes = listOf(
-        "core",
+        "shared",
         "example_service",
         "contract",
     )

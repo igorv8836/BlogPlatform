@@ -9,8 +9,8 @@ application {
 }
 
 dependencies {
-    api(projects.core.common)
-    api(projects.core.client)
+    api(projects.shared.common)
+    api(projects.shared.client)
 
     implementation(libs.bundles.server.ktor.core)
     implementation(libs.bundles.server.database)
