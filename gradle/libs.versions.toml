@@ -1,0 +1,99 @@
+[versions]
+kotlin = "2.2.20"
+
+kotlinFaker = "1.14.0"
+kotlinxDatetime = "0.6.2"
+kotlinxSerializationJson = "1.8.0"
+coroutines = "1.10.1"
+koin = "4.0.0"
+conventional-commits = "3.1.3"
+
+ktor = "3.3.0"
+ktor-test = "2.3.12"
+logback = "1.5.16"
+postgresVersion = "42.7.2"
+exposedVersion = "0.41.1"
+hikariVersion = "5.0.1"
+micrometerPrometheus = "1.13.8"
+micrometerCore = "1.15.4"
+commons-email = "1.5"
+
+rabbitmq = "1.3.6"
+
+[libraries]
+kotlin-faker = { module = "io.github.serpro69:kotlin-faker", version.ref = "kotlinFaker" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "coroutines" }
+
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+
+# Сервер
+kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
+
+ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
+ktor-server-auth = { module = "io.ktor:ktor-server-auth-jvm", version.ref = "ktor" }
+ktor-server-auth-jwt = { module = "io.ktor:ktor-server-auth-jwt-jvm", version.ref = "ktor" }
+ktor-server-auto-head-response = { module = "io.ktor:ktor-server-auto-head-response-jvm", version.ref = "ktor" }
+ktor-server-forwarded-header = { module = "io.ktor:ktor-server-forwarded-header", version.ref = "ktor" }
+ktor-server-websockets = { module = "io.ktor:ktor-server-websockets-jvm", version.ref = "ktor" }
+ktor-server-content-negotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
+ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
+ktor-server-status-pages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
+ktor-server-logging = { module = "io.ktor:ktor-server-call-logging", version.ref = "ktor" }
+ktor-server-openapi = { module = "io.ktor:ktor-server-openapi", version.ref = "ktor" }
+ktor-server-swagger = { module = "io.ktor:ktor-server-swagger", version.ref = "ktor" }
+ktor-server-tests = { module = "io.ktor:ktor-server-tests-jvm", version.ref = "ktor-test" }
+ktor-server-cors = { module = "io.ktor:ktor-server-cors-jvm", version.ref = "ktor" }
+ktor-server-metrics-micrometer = { module = "io.ktor:ktor-server-metrics-micrometer", version.ref = "ktor" }
+micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometerPrometheus" }
+ktor-server-micrometer-core = { module = "io.micrometer:micrometer-core", version.ref = "micrometerCore" }
+
+ktor-client-apache = { module = "io.ktor:ktor-client-apache-jvm", version.ref = "ktor" }
+
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposedVersion" }
+exposed-dao = { module = "org.jetbrains.exposed:exposed-dao", version.ref = "exposedVersion" }
+exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposedVersion" }
+exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposedVersion" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresVersion" }
+hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikariVersion" }
+
+email = { module = "org.apache.commons:commons-email", version.ref = "commons-email" }
+
+koin-ktor = { module = "io.insert-koin:koin-ktor", version.ref = "koin" }
+
+rabbitmq = { module = "io.github.damirdenis-tudor:ktor-server-rabbitmq", version.ref = "rabbitmq" }
+
+[bundles]
+server-ktor-core = [
+    "ktor-server-core",
+    "ktor-server-auth",
+    "ktor-server-auth-jwt",
+    "ktor-server-netty",
+    "koin-ktor",
+    "kotlinx-datetime",
+    "kotlinx-coroutines-core",
+    "kotlinx-serialization-json"
+]
+
+server-database = [
+    "exposed-core",
+    "exposed-dao",
+    "exposed-jdbc",
+    "exposed-java-time",
+    "postgresql",
+    "hikari"
+]
+
+[plugins]
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+
+conventional-commits = { id = "it.nicolasfarabegoli.conventional-commits", version.ref = "conventional-commits" }
+
+ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
