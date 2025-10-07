@@ -18,7 +18,7 @@ fun Application.configureSecurity(config: ServiceConfig) {
         .build()
 
     install(Authentication) {
-        jwt("auth-jwt") {
+        jwt("jwt") {
             this.realm = config.ktor.jwt.realm
 
             verifier(jwkProvider, config.ktor.jwt.issuer)

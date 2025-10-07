@@ -15,6 +15,9 @@ conventionalCommits {
         "shared",
         "example_service",
         "contract",
+
+        "comments_service",
+        "support_service",
     )
 }
 

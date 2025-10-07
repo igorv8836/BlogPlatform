@@ -1,28 +1,26 @@
 package com.example.utils
 
-import com.example.constants.BaseConstants
 import com.example.constants.UnauthorizedException
-import io.ktor.http.*
-import io.ktor.server.application.*
+import com.example.models.Role
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import io.ktor.server.response.*
+import io.ktor.server.routing.*
 
-fun ApplicationCall.userIdOrNull(): String? =
+fun RoutingCall.userIdOrNull(): String? =
     principal<JWTPrincipal>()?.payload?.subject
 
-fun ApplicationCall.userId(): String {
+fun RoutingCall.userId(): String {
     return principal<JWTPrincipal>()?.payload?.subject ?: throw UnauthorizedException()
 }
 
-suspend fun ApplicationCall.requireRole(role: String) {
+suspend fun RoutingCall.requireRole(role: Role) {
     val roles = principal<JWTPrincipal>()
         ?.payload
         ?.getClaim("roles")
         ?.asList(String::class.java)
         ?: emptyList()
 
-    if (role !in roles) {
-        respondText(status = HttpStatusCode.Forbidden, text = BaseConstants.FORBIDDEN.value)
+    if (role.value !in roles) {
+        return handleForbidden()
     }
 }
