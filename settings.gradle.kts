@@ -28,3 +28,5 @@ include(":shared:contracts")
 
 include(":services:comments_service")
 include(":services:support_service")
+
+include("pract5")

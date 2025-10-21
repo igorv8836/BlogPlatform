@@ -18,6 +18,7 @@ conventionalCommits {
 
         "comments_service",
         "support_service",
+        "pract5"
     )
 }
 
