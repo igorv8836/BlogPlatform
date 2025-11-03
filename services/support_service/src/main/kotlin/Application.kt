@@ -5,6 +5,7 @@ import com.example.config.ConfigName
 import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig
 import com.example.data.dataModule
+import com.example.data.db.tables.*
 import com.example.routes.supportRouting
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -48,7 +49,11 @@ fun Application.module(config: ServiceConfig) {
     DatabaseFactory.initializationDatabase(
         config = config,
         tables = arrayOf(
-
+            ModerationActionsTable,
+            TicketMessagesTable,
+            TicketRatingsTable,
+            TicketsTable,
+            TicketStatusLogsTable,
         )
     )
 

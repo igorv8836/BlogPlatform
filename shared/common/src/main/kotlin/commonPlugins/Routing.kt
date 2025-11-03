@@ -48,6 +48,13 @@ fun Application.configureCommonRouting() {
             )
         }
 
+        exception<NotFoundException> { call, cause ->
+            call.respond(
+                status = HttpStatusCode.Conflict,
+                message = BaseResponse(cause.message ?: ErrorType.NULL_RESPONSE.message)
+            )
+        }
+
         exception<Throwable> { call, cause ->
             call.respondText(text = "500: $cause", status = HttpStatusCode.InternalServerError)
         }
