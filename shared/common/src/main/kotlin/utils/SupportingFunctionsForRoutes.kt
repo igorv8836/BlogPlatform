@@ -6,6 +6,9 @@ import com.example.constants.ErrorType
 import com.example.constants.IncorrectQueryParameterException
 import com.example.models.BaseResponse
 import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.plugins.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
@@ -17,8 +20,23 @@ suspend fun RoutingCall.respondNotNull(response: Any?) {
     }
 }
 
-fun RoutingCall.requireParameter(parameter: String): String {
+suspend inline fun <reified T : Any> ApplicationCall.bodyOrException(): T = runCatching {
+        receiveNullable<T>()
+    }.getOrNull() ?: throw BadRequestException(ErrorType.INCORRECT_BODY.message)
+
+fun RoutingCall.requireQueryParameter(parameter: String): String {
     request.queryParameters[parameter]?.let {
+        return it
+    }
+    throw IncorrectQueryParameterException("require parameter $parameter")
+}
+
+fun RoutingCall.queryParameterOrNull(parameter: String): String? {
+    return request.queryParameters[parameter]
+}
+
+fun RoutingCall.requireParameter(parameter: String): String {
+    parameters[parameter]?.let {
         return it
     }
     throw IncorrectQueryParameterException("require parameter $parameter")

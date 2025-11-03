@@ -4,8 +4,8 @@ import com.example.commonPlugins.*
 import com.example.config.ConfigName
 import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig
-import com.example.data.dataModule
 import com.example.data.db.tables.*
+import com.example.di.commentsServiceModule
 import com.example.routes.commentsRouting
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -28,7 +28,7 @@ fun Application.module(config: ServiceConfig) {
     configureSerialization()
     configureKoin(
         otherModules = listOf(
-            dataModule(),
+            commentsServiceModule(),
         ),
     )
 //    val routing = "testing"

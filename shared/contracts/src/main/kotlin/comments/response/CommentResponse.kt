@@ -16,5 +16,6 @@ data class CommentResponse(
     val edited: Boolean,
     val isDeleted: Boolean,
     val isHidden: Boolean,
-    val pinnedByAuthorAt: Instant?
+    val pinnedByAuthorAt: Instant?,
+    val mentions: List<String> = emptyList(),
 )

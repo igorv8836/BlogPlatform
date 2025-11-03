@@ -5,7 +5,7 @@ import com.example.data.repositories.ComplaintRepository
 import com.example.data.repositories.ReactionRepository
 import org.koin.dsl.module
 
-fun dataModule() = module {
+internal fun dataModule() = module {
     single { CommentRepository() }
     single { ComplaintRepository() }
     single { ReactionRepository() }

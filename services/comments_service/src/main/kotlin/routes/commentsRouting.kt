@@ -1,18 +1,17 @@
 package com.example.routes
 
+import com.example.ServiceConstants
+import com.example.constants.Constants
+import com.example.constants.IncorrectQueryParameterException
 import com.example.data.repositories.CommentRepository
 import com.example.data.repositories.ComplaintRepository
 import com.example.data.repositories.ReactionRepository
 import com.example.models.Role
 import com.example.utils.*
 import comments.ReactionType
-import comments.request.ComplaintRequest
-import comments.request.CreateCommentRequest
-import comments.request.EditCommentRequest
-import comments.request.ReactionRequest
+import comments.request.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
@@ -28,95 +27,116 @@ fun Application.commentsRouting() {
             route("/api/v1/comments") {
                 post {
                     val userId = call.userId()
-                    val req = call.receive<CreateCommentRequest>()
+                    val req = call.bodyOrException<CreateCommentRequest>()
                     val created = comments.create(userId, req)
+
                     call.respondNotNull(created)
                 }
 
                 get {
-                    val targetType = call.requireParameter("targetType")
-                    val targetId = call.requireParameter("targetId")
-                    val limit = call.requireParameter("limit").toIntOrNull() ?: 20
-                    val offset = call.requireParameter("offset").toIntOrNull() ?: 0
+                    val targetType = parseTargetType(call.requireQueryParameter(ServiceConstants.TARGET_TYPE))
+                    val targetId = call.requireQueryParameter(ServiceConstants.TARGET_ID)
+                    val limit = call.queryParameterOrNull(Constants.LIMIT)?.toIntOrNull() ?: 20
+                    val offset = call.queryParameterOrNull(Constants.OFFSET)?.toIntOrNull() ?: 0
+
                     call.respond(comments.list(targetType, targetId, limit, offset))
                 }
+//
+//                post("{${Constants.ID}}/reply") {
+//                    val userId = call.userId()
+//                    val id = UUID.fromString(call.requireParameter(Constants.ID))
+//                    val req = call.bodyOrException<EditCommentRequest>()
+//
+//                    call.respondNotNull(comments.reply(userId, id, req))
+//                }
 
-                post("{id}/reply") {
+                patch("{${Constants.ID}}") {
                     val userId = call.userId()
-                    val id = UUID.fromString(call.parameters["id"])
-                    val body = call.receive<EditCommentRequest>().body
-                    call.respondNotNull(comments.reply(userId, id, body))
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
+                    val req = call.bodyOrException<EditCommentRequest>()
+
+                    call.respondNotNull(comments.edit(id, userId, req))
                 }
 
-                patch("{id}") {
+                delete("{${Constants.ID}}") {
                     val userId = call.userId()
-                    val id = UUID.fromString(call.parameters["id"])
-                    val req = call.receive<EditCommentRequest>()
-                    call.respondNotNull(comments.edit(id, userId, req.body))
-                }
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
 
-                delete("{id}") {
-                    val userId = call.userId()
-                    val id = UUID.fromString(call.parameters["id"])
                     comments.softDelete(id, userId)
                     call.handleSuccess()
                 }
 
-                post("{id}/pin") {
+                post("{${Constants.ID}}/pin") {
                     val userId = call.userId()
-                    val id = UUID.fromString(call.parameters["id"])
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
+
                     comments.pin(id, userId)
                     call.handleSuccess()
                 }
 
-                delete("{id}/pin") {
+                delete("{${Constants.ID}}/pin") {
                     val userId = call.userId()
-                    val id = UUID.fromString(call.parameters["id"])
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
+
                     comments.unpin(id, userId)
                     call.handleSuccess()
                 }
 
-                post("{id}/reactions") {
+                post("{${Constants.ID}}/complaints") {
                     val userId = call.userId()
-                    val id = UUID.fromString(call.parameters["id"])
-                    val req = call.receive<ReactionRequest>()
-                    reactions.set(id, userId, req.type)
-                    call.handleSuccess()
-                }
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
+                    val req = call.bodyOrException<ComplaintRequest>()
 
-                delete("{id}/reactions/{type}") {
-                    val userId = call.userId()
-                    val id = UUID.fromString(call.parameters["id"])
-                    val type = ReactionType.valueOf(call.parameters["type"]!!)
-                    reactions.remove(id, userId, type)
-                    call.handleSuccess()
-                }
-
-                post("{id}/complaints") {
-                    val userId = call.userId()
-                    val id = UUID.fromString(call.parameters["id"])
-                    val req = call.receive<ComplaintRequest>()
                     complaints.create(id, userId, req.reason)
                     call.handleSuccess()
                 }
 
-                post("{id}/hide") {
+                post("{${Constants.ID}}/hide") {
                     val moderatorId = call.userId()
                     call.requireRole(Role.Moderator)
-                    val id = UUID.fromString(call.parameters["id"])
-                    val reason = call.request.queryParameters["reason"]
-                    comments.hide(id, moderatorId, reason)
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
+                    val body = call.bodyOrException<HideCommentRequest>()
+
+                    comments.hide(id, moderatorId, body.reason)
                     call.handleSuccess()
                 }
 
-                post("{id}/restore") {
+                post("{${Constants.ID}}/restore") {
                     val moderatorId = call.userId()
                     call.requireRole(Role.Moderator)
-                    val id = UUID.fromString(call.parameters["id"])
+
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
                     comments.restore(id, moderatorId)
+                    call.handleSuccess()
+                }
+
+                post("{${Constants.ID}}/reactions/{${ServiceConstants.REACTION_TYPE}}") {
+                    val userId = call.userId()
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
+                    val type = parseReactionType(call.requireParameter(ServiceConstants.REACTION_TYPE))
+
+                    reactions.set(id, userId, type)
+                    call.handleSuccess()
+                }
+
+                delete("{${Constants.ID}}/reactions/{${ServiceConstants.REACTION_TYPE}}") {
+                    val userId = call.userId()
+                    val id = UUID.fromString(call.requireParameter(Constants.ID))
+                    val type = parseReactionType(call.requireParameter(ServiceConstants.REACTION_TYPE))
+
+                    reactions.remove(id, userId, type)
                     call.handleSuccess()
                 }
             }
         }
     }
 }
+
+private fun parseTargetType(rawValue: String): TargetType =
+    TargetType.entries.firstOrNull {
+        it.value.equals(rawValue, ignoreCase = true) || it.name.equals(rawValue, ignoreCase = true)
+    } ?: throw IncorrectQueryParameterException("Unknown target type: $rawValue")
+
+private fun parseReactionType(rawValue: String): ReactionType =
+    ReactionType.entries.firstOrNull { it.name.equals(rawValue, ignoreCase = true) }
+        ?: throw IncorrectQueryParameterException("Unknown reaction type: $rawValue")
