@@ -29,4 +29,8 @@ dependencies {
     implementation(libs.ktor.server.logging)
 
     implementation(libs.rabbitmq)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.ktor.server.tests)
+    testImplementation(libs.h2)
 }
