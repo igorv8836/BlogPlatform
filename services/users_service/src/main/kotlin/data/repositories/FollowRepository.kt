@@ -1,0 +1,100 @@
+package data.repositories
+
+import data.db.tables.FollowTable
+import data.db.tables.UserTable
+import io.ktor.server.plugins.*
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.innerJoin
+import org.jetbrains.exposed.v1.jdbc.deleteWhere
+import org.jetbrains.exposed.v1.jdbc.insert
+import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import users.UserRole
+import users.response.UserResponse
+
+interface FollowRepository {
+    fun follow(followerId: Long, followeeId: Long): Boolean
+    fun unfollow(followerId: Long, followeeId: Long): Boolean
+    fun isFollowing(followerId: Long, followeeId: Long): Boolean
+    fun getFollowers(userId: Long, limit: Int = 20, offset: Int = 0): List<UserResponse>
+    fun getFollowing(userId: Long, limit: Int = 20, offset: Int = 0): List<UserResponse>
+}
+
+class FollowRepositoryImpl(
+    private val repo: UserRepository
+): FollowRepository {
+    override fun follow(followerId: Long, followeeId: Long): Boolean = transaction {
+        if (followerId == followeeId) {
+            throw BadRequestException("Cannot follow yourself")
+        }
+        if (repo.findById(followeeId) == null) {
+            throw NotFoundException("User to follow not found")
+        }
+        if (isFollowing(followerId, followeeId)) {
+            return@transaction false
+        }
+        FollowTable.insert {
+            it[this.followerId] = followerId
+            it[this.followeeId] = followeeId
+        }
+        true
+    }
+
+    override fun unfollow(followerId: Long, followeeId: Long): Boolean = transaction {
+        val deleted = FollowTable.deleteWhere {
+            (FollowTable.followerId eq followerId) and
+                    (FollowTable.followeeId eq followeeId)
+        }
+        deleted > 0
+    }
+
+    override fun isFollowing(followerId: Long, followeeId: Long): Boolean = transaction {
+        FollowTable
+            .select(FollowTable.id)
+            .where {
+                (FollowTable.followerId eq followerId) and
+                        (FollowTable.followeeId eq followeeId)
+            }
+            .empty().not()
+    }
+
+    override fun getFollowers(userId: Long, limit: Int, offset: Int ): List<UserResponse> = transaction {
+        FollowTable
+            .innerJoin(UserTable, { FollowTable.followerId }, { UserTable.id })
+            .select(UserTable.columns)
+            .where { FollowTable.followeeId eq userId }
+            .orderBy(FollowTable.createdAt, SortOrder.DESC)
+            .limit(limit)
+            .map { row ->
+                UserResponse(
+                    id = row[UserTable.id],
+                    login = row[UserTable.login],
+                    creationDate = row[UserTable.creationDate].toString(),
+                    role =row[UserTable.role],
+                    desc = row[UserTable.desc],
+                    avatar = row[UserTable.avatar],
+                )
+            }
+    }
+
+    override fun getFollowing(userId: Long, limit: Int, offset: Int): List<UserResponse> = transaction {
+        FollowTable
+            .innerJoin(UserTable, { FollowTable.followerId }, { UserTable.id })
+            .select(UserTable.columns)
+            .where { FollowTable.followerId eq userId }
+            .orderBy(FollowTable.createdAt, SortOrder.DESC)
+            .limit(limit)
+            .map { row ->
+                UserResponse(
+                    id = row[UserTable.id],
+                    login = row[UserTable.login],
+                    creationDate = row[UserTable.creationDate].toString(),
+                    role = row[UserTable.role],
+                    desc = row[UserTable.desc],
+                    avatar = row[UserTable.avatar],
+                )
+            }
+    }
+}

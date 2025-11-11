@@ -30,3 +30,5 @@ include(":services:comments_service")
 include(":services:support_service")
 
 include("pract5")
+
+include(":services:users_service")
