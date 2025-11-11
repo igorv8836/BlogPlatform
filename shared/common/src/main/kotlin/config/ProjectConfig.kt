@@ -53,6 +53,9 @@ enum class ConfigName(val value: String) {
     COMMENTS_SERVICE("comments_service"),
     SUPPORT_SERVICE("support_service"),
     USER_SERVICE("user_service"),
+    POSTS_SERVICE("posts_service"),
+    WALLET_SERVICE("wallet_service"),
+    PAYMENT_SERVICE("payment_service")
 }
 
 fun getServiceConfig(name: ConfigName): ServiceConfig {

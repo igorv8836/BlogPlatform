@@ -32,3 +32,6 @@ include(":services:support_service")
 include("pract5")
 
 include(":services:users_service")
+include("services:wallet_service")
+include("services:payment_service")
+include("services:posts_service")
