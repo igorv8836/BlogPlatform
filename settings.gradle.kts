@@ -21,7 +21,6 @@ dependencyResolutionManagement {
     }
 }
 
-include(":example_service")
 include(":shared:client")
 include(":shared:common")
 include(":shared:contracts")
