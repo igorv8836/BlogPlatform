@@ -1,36 +1,26 @@
-package routes
+package com.example.routes
 
 import com.example.constants.ConflictException
 import com.example.constants.UnauthorizedException
-import com.example.utils.*
-import data.repositories.BanRepository
-import data.repositories.FollowRepository
-import data.repositories.ReportRepository
-import data.repositories.UserRepository
-import hashing.HashingService
-import io.ktor.http.HttpStatusCode
+import com.example.data.repositories.BanRepository
+import com.example.data.repositories.FollowRepository
+import com.example.data.repositories.UserRepository
+import com.example.hashing.HashingService
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.plugins.NotFoundException
-import io.ktor.server.request.receive
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
-import security.TokenClaim
-import security.TokenConfig
-import security.TokenService
-import support.request.*
-import users.UserRole
-import users.request.AuthRequest
-import users.request.BanRequest
-import users.request.RecoveryRequest
-import users.request.RegisterRequest
-import users.request.ReportRequest
-import users.request.UpdateProfileRequest
+import com.example.security.TokenClaim
+import com.example.security.TokenConfig
+import com.example.security.TokenService
+import users.request.*
 import users.response.AuthResponse
 import users.response.RecoveryResponse
-import java.util.*
 
 object SupportRoutes {
     val tokenConfig = TokenConfig(
@@ -48,7 +38,6 @@ fun Application.userRouting() {
     val followRepository: FollowRepository by inject()
     val hashingService: HashingService by inject()
     val tokenService: TokenService by inject()
-    val reportRepository: ReportRepository by inject()
 
     routing {
         post("/api/v1/register") {
@@ -65,8 +54,12 @@ fun Application.userRouting() {
             val token = tokenService.generate(
                 config = SupportRoutes.tokenConfig,
                 TokenClaim(
-                    name = "login",
-                    value = req.login
+                    name = "id",
+                    value = userRepository.findByLogin(req.login)!!.id.toString()
+                ),
+                TokenClaim(
+                    name = "role",
+                    value = userRepository.findByLogin(req.login)!!.role.toString()
                 )
             )
 
@@ -92,8 +85,12 @@ fun Application.userRouting() {
             val token = tokenService.generate(
                 config = SupportRoutes.tokenConfig,
                 TokenClaim(
-                    name = "login",
-                    value = req.login
+                    name = "id",
+                    value = userRepository.findByLogin(req.login)!!.id.toString()
+                ),
+                TokenClaim(
+                    name = "role",
+                    value = userRepository.findByLogin(req.login)!!.role.toString()
                 )
             )
             call.respond(AuthResponse(token))
@@ -151,21 +148,7 @@ fun Application.userRouting() {
                     val principal = call.principal<JWTPrincipal>()
                     val userLogin = principal?.getClaim("login", String::class) ?: throw UnauthorizedException()
 
-                    if (userRepository.findById(id) == null) {
-                        throw NotFoundException("Target user not found")
-                    }
-                    if (userRepository.findByLogin(userLogin) == null) {
-                        throw NotFoundException("User not found")
-                    }
-
-                    val req = call.receive<ReportRequest>()
-
-                    reportRepository.create(
-                        id,
-                        userRepository.findByLogin(userLogin)!!.id,
-                        reason = req.reason,
-                        message = req.message
-                    )
+                    //TODO to support service
 
                     call.respond(HttpStatusCode.Accepted)
                 }
@@ -223,7 +206,6 @@ fun Application.userRouting() {
                         targetUserId = id,
                         moderatorId = userRepository.findByLogin(userLogin)!!.id,
                         durationDays = req.duration,
-                        reason = req.reason,
                         message = req.message
                     )
 

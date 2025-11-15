@@ -1,19 +1,17 @@
-package data
+package com.example.data
 
-import data.repositories.BanRepository
-import data.repositories.BanRepositoryImpl
-import data.repositories.FollowRepository
-import data.repositories.FollowRepositoryImpl
-import data.repositories.ReportRepository
-import data.repositories.ReportRepositoryImpl
-import data.repositories.UserRepository
-import data.repositories.UserRepositoryImpl
-import hashing.HashingService
-import hashing.SHA256HashingService
+import com.example.data.repositories.BanRepository
+import com.example.data.repositories.BanRepositoryImpl
+import com.example.data.repositories.FollowRepository
+import com.example.data.repositories.FollowRepositoryImpl
+import com.example.data.repositories.UserRepository
+import com.example.data.repositories.UserRepositoryImpl
+import com.example.hashing.HashingService
+import com.example.hashing.SHA256HashingService
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import security.JwtTokenService
-import security.TokenService
+import com.example.security.JwtTokenService
+import com.example.security.TokenService
 
 fun dataModule() = module {
     single {
@@ -25,9 +23,6 @@ fun dataModule() = module {
     single {
         FollowRepositoryImpl(get())
     } bind FollowRepository::class
-    single {
-        ReportRepositoryImpl(get())
-    } bind ReportRepository::class
     single {
         SHA256HashingService()
     } bind HashingService::class

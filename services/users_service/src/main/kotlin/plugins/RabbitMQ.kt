@@ -1,4 +1,4 @@
-package plugins
+package com.example.plugins
 
 import com.example.config.ServiceConfig
 import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicConsume

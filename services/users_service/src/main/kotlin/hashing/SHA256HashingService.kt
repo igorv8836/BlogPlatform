@@ -1,4 +1,4 @@
-package hashing
+package com.example.hashing
 
 import org.apache.commons.codec.binary.Hex
 import org.apache.commons.codec.digest.DigestUtils

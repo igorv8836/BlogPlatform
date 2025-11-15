@@ -1,4 +1,4 @@
-package security
+package com.example.security
 
 data class TokenConfig(
     val issuer: String,

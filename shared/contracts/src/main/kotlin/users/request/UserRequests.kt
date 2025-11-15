@@ -1,7 +1,6 @@
 package users.request
 
 import kotlinx.serialization.Serializable
-import users.ReportReason
 
 @Serializable
 data class RegisterRequest(
@@ -24,14 +23,7 @@ data class RecoveryRequest(
 )
 
 @Serializable
-data class ReportRequest(
-    val reason: ReportReason,
-    val message: String,
-)
-
-@Serializable
 data class BanRequest(
-    val reason: ReportReason,
     val duration: Int, //Number of days
     val message: String,
 )

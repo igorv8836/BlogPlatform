@@ -1,7 +1,7 @@
-package data.repositories
+package com.example.data.repositories
 
-import data.db.tables.FollowTable
-import data.db.tables.UserTable
+import com.example.data.db.tables.FollowTable
+import com.example.data.db.tables.UserTable
 import io.ktor.server.plugins.*
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
@@ -11,7 +11,6 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import users.UserRole
 import users.response.UserResponse
 
 interface FollowRepository {

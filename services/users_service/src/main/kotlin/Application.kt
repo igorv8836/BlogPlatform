@@ -4,18 +4,17 @@ import com.example.commonPlugins.*
 import com.example.config.ConfigName
 import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig
-import data.dataModule
-import data.db.tables.BanTable
-import data.db.tables.FollowTable
-import data.db.tables.ReportTable
-import data.db.tables.UserTable
+import com.example.data.dataModule
+import com.example.data.db.tables.BanTable
+import com.example.data.db.tables.FollowTable
+import com.example.data.db.tables.UserTable
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.routing.*
-import routes.SupportRoutes
-import routes.userRouting
-import security.configureSecurity
+import com.example.routes.SupportRoutes
+import com.example.routes.userRouting
+import com.example.security.configureSecurity
 
 fun main(args: Array<String>) {
     val config = getServiceConfig(ConfigName.USER_SERVICE)
@@ -44,8 +43,7 @@ fun Application.module(config: ServiceConfig) {
         tables = arrayOf(
             UserTable,
             FollowTable,
-            BanTable,
-            ReportTable
+            BanTable
         )
     )
 

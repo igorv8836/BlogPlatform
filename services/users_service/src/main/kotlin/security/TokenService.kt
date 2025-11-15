@@ -1,4 +1,4 @@
-package security
+package com.example.security
 
 interface TokenService {
     fun generate(

@@ -1,8 +1,7 @@
-package data.db.tables
+package com.example.data.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.datetime.timestampWithTimeZone
-import users.ReportReason
 import users.UserRole
 import users.UserStatus
 

@@ -1,21 +1,13 @@
-package data.repositories
+package com.example.data.repositories
 
-import com.example.constants.ConflictException
-import data.db.tables.BanTable
-import data.db.tables.BanTable.unbannedBy
-import data.db.tables.UserTable
-import io.ktor.server.plugins.NotFoundException
-import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.greaterEq
-import org.jetbrains.exposed.v1.core.isNull
-import org.jetbrains.exposed.v1.core.or
+import com.example.data.db.tables.BanTable
+import io.ktor.server.plugins.*
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.core.statements.InsertStatement
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
-import users.ReportReason
 import users.UserStatus
 import java.time.OffsetDateTime
 
@@ -24,7 +16,6 @@ interface BanRepository {
         targetUserId: Long,
         moderatorId: Long,
         durationDays: Int?,
-        reason: ReportReason,
         message: String?
     ): InsertStatement<Number>
 
@@ -42,7 +33,6 @@ class BanRepositoryImpl(
         targetUserId: Long,
         moderatorId: Long,
         durationDays: Int?,
-        reason: ReportReason,
         message: String?
     ) = transaction {
 
@@ -58,7 +48,6 @@ class BanRepositoryImpl(
         BanTable.insert {
             it[userId] = targetUserId
             it[this.moderatorId] = moderatorId
-            it[this.reason] = reason
             it[this.durationDays] = durationDays
             it[this.expiresAt] = expiresAt
             it[this.message] = message

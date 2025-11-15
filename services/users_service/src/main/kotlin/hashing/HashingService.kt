@@ -1,4 +1,4 @@
-package hashing
+package com.example.hashing
 
 interface HashingService {
     fun generateSaltedHash(

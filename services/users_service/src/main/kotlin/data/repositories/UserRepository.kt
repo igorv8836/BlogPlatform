@@ -1,8 +1,8 @@
-package data.repositories
+package com.example.data.repositories
 
 import com.example.constants.ConflictException
-import data.db.tables.UserTable
-import hashing.SaltedHash
+import com.example.data.db.tables.UserTable
+import com.example.hashing.SaltedHash
 import io.ktor.server.plugins.*
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
