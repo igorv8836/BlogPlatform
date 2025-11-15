@@ -1,10 +1,6 @@
+package com.example
 
-import com.example.commonPlugins.DatabaseFactory
-import com.example.commonPlugins.configureCommonRouting
-import com.example.commonPlugins.configureKoin
-import com.example.commonPlugins.configureMonitoring
-import com.example.commonPlugins.configureOpenApi
-import com.example.commonPlugins.configureSerialization
+import com.example.commonPlugins.*
 import com.example.config.ConfigName
 import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig

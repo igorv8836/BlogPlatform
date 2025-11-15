@@ -1,4 +1,4 @@
-package org.example
+package com.example
 
 import com.example.commonPlugins.*
 import com.example.config.ConfigName

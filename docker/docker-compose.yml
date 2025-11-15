@@ -1,15 +1,208 @@
+name: blog-platform
+
+x-postgres: &postgres-db
+  image: postgres:16
+  restart: unless-stopped
+  networks:
+    - blog
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+    interval: 5s
+    timeout: 5s
+    retries: 10
+
+x-service-build: &service-build
+  context: ..
+  dockerfile: docker/service.Dockerfile
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - blog
+
 services:
-  user_db:
-    image: postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5433:5432"
-    volumes:
-      - users_data:/var/lib/postgresql/18/data
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    hostname: rabbitmq
     restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - blog
+
+  comments_db:
+    <<: *postgres-db
+    environment:
+      POSTGRES_DB: ${COMMENTS_DB_NAME:-comments_db}
+      POSTGRES_USER: ${COMMENTS_DB_USER:-comments_user}
+      POSTGRES_PASSWORD: ${COMMENTS_DB_PASSWORD:-comments_password}
+    volumes:
+      - comments_db_data:/var/lib/postgresql/data
+
+  support_db:
+    <<: *postgres-db
+    environment:
+      POSTGRES_DB: ${SUPPORT_DB_NAME:-support_db}
+      POSTGRES_USER: ${SUPPORT_DB_USER:-support_user}
+      POSTGRES_PASSWORD: ${SUPPORT_DB_PASSWORD:-support_password}
+    volumes:
+      - support_db_data:/var/lib/postgresql/data
+
+  users_db:
+    <<: *postgres-db
+    environment:
+      POSTGRES_DB: ${USER_DB_NAME:-users_db}
+      POSTGRES_USER: ${USER_DB_USER:-users_user}
+      POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-users_password}
+    volumes:
+      - users_db_data:/var/lib/postgresql/data
+
+  posts_db:
+    <<: *postgres-db
+    environment:
+      POSTGRES_DB: ${POSTS_DB_NAME:-posts_db}
+      POSTGRES_USER: ${POSTS_DB_USER:-posts_user}
+      POSTGRES_PASSWORD: ${POSTS_DB_PASSWORD:-posts_password}
+    volumes:
+      - posts_db_data:/var/lib/postgresql/data
+
+  wallet_db:
+    <<: *postgres-db
+    environment:
+      POSTGRES_DB: ${WALLET_DB_NAME:-wallet_db}
+      POSTGRES_USER: ${WALLET_DB_USER:-wallet_user}
+      POSTGRES_PASSWORD: ${WALLET_DB_PASSWORD:-wallet_password}
+    volumes:
+      - wallet_db_data:/var/lib/postgresql/data
+
+  comments-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args:
+        SERVICE_NAME: comments_service
+        SERVICE_PORT: ${COMMENTS_SERVICE_PORT:-8081}
+    environment:
+      COMMENTS_SERVICE_HOST: 0.0.0.0
+      COMMENTS_SERVICE_PORT: ${COMMENTS_SERVICE_PORT:-8081}
+      COMMENTS_SERVICE_JDBC_URL: jdbc:postgresql://comments_db:5432/${COMMENTS_DB_NAME:-comments_db}
+      COMMENTS_SERVICE_DB_USER: ${COMMENTS_DB_USER:-comments_user}
+      COMMENTS_SERVICE_DB_PASSWORD: ${COMMENTS_DB_PASSWORD:-comments_password}
+      COMMENTS_SERVICE_RABBIT_URI: amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      comments_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${COMMENTS_SERVICE_PORT:-8081}:${COMMENTS_SERVICE_PORT:-8081}"
+
+  support-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args:
+        SERVICE_NAME: support_service
+        SERVICE_PORT: ${SUPPORT_SERVICE_PORT:-8082}
+    environment:
+      SUPPORT_SERVICE_HOST: 0.0.0.0
+      SUPPORT_SERVICE_PORT: ${SUPPORT_SERVICE_PORT:-8082}
+      SUPPORT_SERVICE_JDBC_URL: jdbc:postgresql://support_db:5432/${SUPPORT_DB_NAME:-support_db}
+      SUPPORT_SERVICE_DB_USER: ${SUPPORT_DB_USER:-support_user}
+      SUPPORT_SERVICE_DB_PASSWORD: ${SUPPORT_DB_PASSWORD:-support_password}
+      SUPPORT_SERVICE_RABBIT_URI: amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      support_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${SUPPORT_SERVICE_PORT:-8082}:${SUPPORT_SERVICE_PORT:-8082}"
+
+  users-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args:
+        SERVICE_NAME: users_service
+        SERVICE_PORT: ${USER_SERVICE_PORT:-8085}
+    environment:
+      USER_SERVICE_HOST: 0.0.0.0
+      USER_SERVICE_PORT: ${USER_SERVICE_PORT:-8085}
+      USER_SERVICE_JDBC_URL: jdbc:postgresql://users_db:5432/${USER_DB_NAME:-users_db}
+      USER_SERVICE_DB_USER: ${USER_DB_USER:-users_user}
+      USER_SERVICE_DB_PASSWORD: ${USER_DB_PASSWORD:-users_password}
+      USER_SERVICE_RABBIT_URI: amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      users_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${USER_SERVICE_PORT:-8085}:${USER_SERVICE_PORT:-8085}"
+
+  posts-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args:
+        SERVICE_NAME: posts_service
+        SERVICE_PORT: ${POSTS_SERVICE_PORT:-8083}
+    environment:
+      POSTS_SERVICE_HOST: 0.0.0.0
+      POSTS_SERVICE_PORT: ${POSTS_SERVICE_PORT:-8083}
+      POSTS_SERVICE_JDBC_URL: jdbc:postgresql://posts_db:5432/${POSTS_DB_NAME:-posts_db}
+      POSTS_SERVICE_DB_USER: ${POSTS_DB_USER:-posts_user}
+      POSTS_SERVICE_DB_PASSWORD: ${POSTS_DB_PASSWORD:-posts_password}
+      POSTS_SERVICE_RABBIT_URI: amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      posts_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${POSTS_SERVICE_PORT:-8083}:${POSTS_SERVICE_PORT:-8083}"
+
+  wallet-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args:
+        SERVICE_NAME: wallet_service
+        SERVICE_PORT: ${WALLET_SERVICE_PORT:-8084}
+    environment:
+      WALLET_SERVICE_HOST: 0.0.0.0
+      WALLET_SERVICE_PORT: ${WALLET_SERVICE_PORT:-8084}
+      WALLET_SERVICE_JDBC_URL: jdbc:postgresql://wallet_db:5432/${WALLET_DB_NAME:-wallet_db}
+      WALLET_SERVICE_DB_USER: ${WALLET_DB_USER:-wallet_user}
+      WALLET_SERVICE_DB_PASSWORD: ${WALLET_DB_PASSWORD:-wallet_password}
+      WALLET_SERVICE_RABBIT_URI: amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      wallet_db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${WALLET_SERVICE_PORT:-8084}:${WALLET_SERVICE_PORT:-8084}"
 
 volumes:
-  users_data:
+  rabbitmq_data:
+  comments_db_data:
+  support_db_data:
+  users_db_data:
+  posts_db_data:
+  wallet_db_data:
+
+networks:
+  blog:

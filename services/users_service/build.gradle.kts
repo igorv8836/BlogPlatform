@@ -5,7 +5,7 @@ plugins {
 }
 
 application {
-    mainClass = "io.ktor.server.netty.EngineMain"
+    mainClass = "com.example.ApplicationKt"
 }
 
 dependencies {
