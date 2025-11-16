@@ -1,13 +1,12 @@
 # syntax=docker/dockerfile:1.7
-ARG GRADLE_IMAGE=gradle:8.10.2-jdk21
+ARG GRADLE_IMAGE=gradle:8.11
 ARG RUNTIME_IMAGE=eclipse-temurin:21-jre-jammy
 
 FROM ${GRADLE_IMAGE} AS build
 WORKDIR /workspace
 COPY . .
-RUN chmod +x gradlew
 ARG SERVICE_NAME
-RUN ./gradlew --no-daemon :services:${SERVICE_NAME}:installDist
+RUN gradle --no-daemon :services:${SERVICE_NAME}:installDist
 
 FROM ${RUNTIME_IMAGE} AS runtime
 ARG SERVICE_NAME

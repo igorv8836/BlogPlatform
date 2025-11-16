@@ -4,16 +4,16 @@ import com.example.commonPlugins.*
 import com.example.config.ConfigName
 import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig
-import com.example.routes.commentsRouting
 import com.example.data.dataModule
 import com.example.data.db.tables.NotificationTable
+import com.example.routes.commentsRouting
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.routing.*
 
 fun main(args: Array<String>) {
-    val config = getServiceConfig(ConfigName.USER_SERVICE)
+    val config = getServiceConfig(ConfigName.NOTIFICATION_SERVICE)
     embeddedServer(
         factory = Netty,
         port = config.ktor.deployment.port,
@@ -31,6 +31,8 @@ fun Application.module(config: ServiceConfig) {
             dataModule(),
         ),
     )
+
+    configureSecurity(config)
 
     configureCommonRouting()
     DatabaseFactory.initializationDatabase(
