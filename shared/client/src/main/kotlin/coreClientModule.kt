@@ -10,6 +10,7 @@ private const val POSTS_SERVICE_PORT=8083
 private const val WALLET_SERVICE_PORT=8084
 private const val USER_SERVICE_PORT=8085
 private const val NOTIFICATION_SERVICE_PORT=8086
+private const val PAYMENT_SERVICE_PORT=8087
 
 // TODO We don't have in .env something like this
 private const val BASE_URL = "http://0.0.0.0:"

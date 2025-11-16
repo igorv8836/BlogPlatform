@@ -4,19 +4,13 @@ import com.example.commonPlugins.*
 import com.example.config.ConfigName
 import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig
-import data.dataModule
-import data.db.tables.PaymentMethodsTable
-import data.db.tables.SubscriptionsTable
-import data.db.tables.WalletsTable
-import data.db.tables.WithdrawalRequestsTable
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import plugins.configureRabbitRouting
-import routes.configureWalletRouting
 
 fun main(args: Array<String>) {
-    val config = getServiceConfig(ConfigName.WALLET_SERVICE)
+    val config = getServiceConfig(ConfigName.PAYMENT_SERVICE)
     embeddedServer(
         factory = Netty,
         port = config.ktor.deployment.port,
@@ -31,9 +25,12 @@ fun Application.module(config: ServiceConfig) {
     configureSerialization()
     configureKoin(
         otherModules = listOf(
-            dataModule(),
+//            dataModule(),
         ),
     )
+
+    configureSecurity(config)
+    configureCommonRouting()
 
     val routing = config.ktor.jwt.audience
     configureRabbitMQ(
@@ -47,18 +44,4 @@ fun Application.module(config: ServiceConfig) {
         },
         routing = routing,
     )
-
-    configureSecurity(config)
-    configureCommonRouting()
-    DatabaseFactory.initializationDatabase(
-        config = config,
-        tables = arrayOf(
-            PaymentMethodsTable,
-            SubscriptionsTable,
-            WalletsTable,
-            WithdrawalRequestsTable
-        )
-    )
-
-    configureWalletRouting(config)
 }

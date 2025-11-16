@@ -1,10 +1,14 @@
 package routes
 
+import com.example.config.ServiceConfig
 import com.example.utils.userIdOrNull
 import data.repositories.PaymentMethodRepository
 import data.repositories.SubscriptionRepository
 import data.repositories.WalletRepository
 import data.repositories.WithdrawalRequestRepository
+import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicProperties
+import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicPublish
+import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.rabbitmq
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.*
@@ -12,15 +16,18 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
-import wallet.request.SupportAuthorRequest
-import wallet.response.SupportAuthorResponse
+import payment.request.PaymentAsyncRequest
+import wallet.Currency
 import wallet.request.AddPaymentMethodRequest
 import wallet.request.RequestWithdrawalRequest
 import wallet.request.SubscribeToAuthorRequest
+import wallet.request.SupportAuthorRequest
+import wallet.response.SupportAuthorResponse
 import java.util.*
 
+const val PAYMENT_ROUTING_KEY = "payment-service"
 
-fun Application.configureWalletRouting() {
+fun Application.configureWalletRouting(config: ServiceConfig) {
     val walletRepository by inject<WalletRepository>()
     val paymentMethodRepository by inject<PaymentMethodRepository>()
     val withdrawalRequestRepository by inject<WithdrawalRequestRepository>()
@@ -30,7 +37,7 @@ fun Application.configureWalletRouting() {
         route("/api/v1/wallet") {
 
             post {
-                val userId: Long = call.userIdOrNull()?.toLong() ?: 100
+                val userId: Long = call.userIdOrNull()?.toLong() ?: 125
                 call.respond(walletRepository.createWallet(userId))
             }
 
@@ -59,15 +66,6 @@ fun Application.configureWalletRouting() {
                 call.respond(paymentMethodRepository.selectDefaultPaymentMethod(methodId, userId))
             }
 
-            post("/credit") {
-                val amount: Double = call.parameters["amount"]?.toDouble()
-                    ?: throw BadRequestException("Parameter amount is null")
-                val userId: Long = call.parameters["userId"]?.toLong()
-                    ?: throw BadRequestException("userId is null")
-
-                call.respond(walletRepository.credit(userId, amount))
-            }
-
             post("/debit") {
                 val amount: Double = call.parameters["amount"]?.toDouble()
                     ?: throw BadRequestException("Parameter amount is null")
@@ -86,14 +84,52 @@ fun Application.configureWalletRouting() {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Insufficient funds"))
                     return@post
                 }
-                // В реальности тут должна быть проверка способа оплаты и списание средств
+
+                rabbitmq {
+                    basicPublish {
+                        exchange = config.ktor.rabbitmq.exchange
+                        routingKey = PAYMENT_ROUTING_KEY
+                        properties = basicProperties {
+                            correlationId = UUID.randomUUID().toString()
+                            replyTo = config.ktor.jwt.audience
+                        }
+                        message {
+                            PaymentAsyncRequest.DebitFundsRequest(
+                                userId = userId,
+                                amount = request.amount,
+                                currency = request.currency,
+                                sourceDebitId = request.paymentMethodId
+                            ) as PaymentAsyncRequest
+                        }
+                    }
+                }
+
                 call.respond(withdrawalRequestRepository.requestWithdrawal(userId, request))
             }
 
             post("/subscription") {
                 val userId: Long = call.userIdOrNull()?.toLong() ?: 100
                 val request = call.receive<SubscribeToAuthorRequest>()
-                // В реальности тут нужно проверить баланс, способ оплаты и произвести первый платёж
+
+                rabbitmq {
+                    basicPublish {
+                        exchange = config.ktor.rabbitmq.exchange
+                        routingKey = PAYMENT_ROUTING_KEY
+                        properties = basicProperties {
+                            correlationId = UUID.randomUUID().toString()
+                            replyTo = config.ktor.jwt.audience
+                        }
+                        message {
+                            PaymentAsyncRequest.TransferFundsRequest(
+                                fromUserId = userId,
+                                toUserId = request.authorId,
+                                currency = Currency.RUB,
+                                amount = request.amount
+                            ) as PaymentAsyncRequest
+                        }
+                    }
+                }
+
                 val response = subscriptionRepository.subscribeToAuthor(userId, request)
                 call.respond(response)
             }
@@ -113,7 +149,26 @@ fun Application.configureWalletRouting() {
                     call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Insufficient funds"))
                     return@post
                 }
-                // В реальности тут нужно проверить способ оплаты и произвести платёж
+
+                rabbitmq {
+                    basicPublish {
+                        exchange = config.ktor.rabbitmq.exchange
+                        routingKey = PAYMENT_ROUTING_KEY
+                        properties = basicProperties {
+                            correlationId = UUID.randomUUID().toString()
+                            replyTo = config.ktor.jwt.audience
+                        }
+                        message {
+                            PaymentAsyncRequest.TransferFundsRequest(
+                                fromUserId = userId,
+                                toUserId = request.authorId,
+                                currency = Currency.RUB,
+                                amount = request.amount
+                            ) as PaymentAsyncRequest
+                        }
+                    }
+                }
+
                 val supportId = UUID.randomUUID().toString()
                 val now = java.time.LocalDateTime.now().toString()
                 val response = SupportAuthorResponse(

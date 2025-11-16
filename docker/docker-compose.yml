@@ -237,6 +237,23 @@ services:
     ports:
       - "${WALLET_SERVICE_PORT:-8084}:${WALLET_SERVICE_PORT:-8084}"
 
+  payment-service:
+    <<: *service-defaults
+    build:
+      <<: *service-build
+      args:
+        SERVICE_NAME: payment_service
+        SERVICE_PORT: ${PAYMENT_SERVICE_PORT:-8087}
+    environment:
+      PAYMENT_SERVICE_HOST: 0.0.0.0
+      PAYMENT_SERVICE_PORT: ${PAYMENT_SERVICE_PORT:-8087}
+      PAYMENT_SERVICE_RABBIT_URI: amqp://${RABBITMQ_DEFAULT_USER:-guest}:${RABBITMQ_DEFAULT_PASS:-guest}@rabbitmq:5672
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    ports:
+      - "${PAYMENT_SERVICE_PORT:-8087}:${PAYMENT_SERVICE_PORT:-8087}"
+
 volumes:
   rabbitmq_data:
   comments_db_data:

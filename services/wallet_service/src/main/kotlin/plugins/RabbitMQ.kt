@@ -1,47 +1,44 @@
 package plugins
 
 import com.example.config.ServiceConfig
+import data.repositories.WalletRepository
+import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicAck
 import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicConsume
-import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicProperties
-import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicPublish
 import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.rabbitmq
 import io.github.damir.denis.tudor.ktor.server.rabbitmq.rabbitMQ
 import io.ktor.server.application.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.Dispatchers
+import wallet.request.WalletAsyncRequest
 
 fun Routing.configureRabbitRouting(
     application: Application,
     config: ServiceConfig,
     routing: String
 ) {
-    rabbitmq {
-        get("/rabbitmq") {
-            basicPublish {
-                exchange = config.ktor.rabbitmq.exchange
-                routingKey = routing
-                properties = basicProperties {
-                    correlationId = "jetbrains"
-                    type = "plugin"
-                    headers = mapOf("ktor" to "rabbitmq")
-                }
-                message { "Hello Ktor!" }
-            }
 
-            call.respondText("Hello RabbitMQ!")
-        }
-    }
+    val walletRepository = WalletRepository()
 
     rabbitmq {
         basicConsume {
-            autoAck = true
+            autoAck = false
             queue = config.ktor.rabbitmq.queue
             dispatcher = Dispatchers.rabbitMQ
             coroutinePollSize = 100
 
-            deliverCallback<String> { message ->
-                application.log.info("Received message: $message")
+            deliverCallback<WalletAsyncRequest> { message ->
+                application.log.info("${message.body}")
+
+                when(val walletAsyncRequest = message.body) {
+                    is WalletAsyncRequest.CreditRequest -> {
+                        walletRepository.credit(walletAsyncRequest.userId, walletAsyncRequest.creditedAmount)
+                    }
+                    is WalletAsyncRequest.DebitRequest -> {
+                        walletRepository.debit(walletAsyncRequest.userId, walletAsyncRequest.debitedAmount)
+                    }
+                }
+
+                basicAck { deliveryTag = message.envelope.deliveryTag }
             }
 
             deliverFailureCallback { message ->
