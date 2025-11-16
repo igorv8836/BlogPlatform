@@ -1,5 +1,7 @@
 package com.example.data
 
+import com.example.commonPlugins.JwtTokenService
+import com.example.commonPlugins.TokenService
 import com.example.data.repositories.BanRepository
 import com.example.data.repositories.BanRepositoryImpl
 import com.example.data.repositories.FollowRepository
@@ -10,8 +12,6 @@ import com.example.hashing.HashingService
 import com.example.hashing.SHA256HashingService
 import org.koin.dsl.bind
 import org.koin.dsl.module
-import com.example.security.JwtTokenService
-import com.example.security.TokenService
 
 fun dataModule() = module {
     single {

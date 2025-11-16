@@ -23,6 +23,8 @@ data class ServiceConfig(
         val audience: String,
         val jwksUrl: String,
         val realm: String,
+        val secretKey: String,
+        val expirationTime: Long
     )
 
     data class RabbitMq(

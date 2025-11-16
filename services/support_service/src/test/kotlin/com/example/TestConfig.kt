@@ -16,6 +16,8 @@ internal fun testServiceConfig(): ServiceConfig {
                 audience = "all",
                 jwksUrl = "http://localhost/jwks.json",
                 realm = "test-realm",
+                secretKey = "secret",
+                expirationTime = 2L * 1000L * 60L * 60L * 24L
             ),
             rabbitmq = ServiceConfig.RabbitMq(
                 uri = "amqp://guest:guest@localhost:5672",

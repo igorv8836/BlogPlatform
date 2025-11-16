@@ -1,5 +1,8 @@
 package com.example.routes
 
+import com.example.commonPlugins.TokenClaim
+import com.example.commonPlugins.TokenService
+import com.example.config.ServiceConfig
 import com.example.constants.ConflictException
 import com.example.constants.UnauthorizedException
 import com.example.data.repositories.BanRepository
@@ -15,24 +18,11 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
-import com.example.security.TokenClaim
-import com.example.security.TokenConfig
-import com.example.security.TokenService
 import users.request.*
 import users.response.AuthResponse
 import users.response.RecoveryResponse
 
-object SupportRoutes {
-    val tokenConfig = TokenConfig(
-        issuer = "http://0.0.0.0:8082",
-        audience = "all",
-        expiresIn =  2L * 1000L * 60L * 60L * 24L,
-        secretKey = "test"
-    )
-    const val BASE = "/api/v1"
-}
-
-fun Application.userRouting() {
+fun Application.userRouting(config: ServiceConfig) {
     val userRepository: UserRepository by inject()
     val banRepository: BanRepository by inject()
     val followRepository: FollowRepository by inject()
@@ -52,7 +42,7 @@ fun Application.userRouting() {
             userRepository.register(req, hashedPassword)
 
             val token = tokenService.generate(
-                config = SupportRoutes.tokenConfig,
+                config = config,
                 TokenClaim(
                     name = "id",
                     value = userRepository.findByLogin(req.login)!!.id.toString()
@@ -83,7 +73,7 @@ fun Application.userRouting() {
             }
 
             val token = tokenService.generate(
-                config = SupportRoutes.tokenConfig,
+                config = config,
                 TokenClaim(
                     name = "id",
                     value = userRepository.findByLogin(req.login)!!.id.toString()
@@ -104,14 +94,14 @@ fun Application.userRouting() {
             call.respond(RecoveryResponse("Recovery link sent to email"))
         }
 
-        authenticate {
+        authenticate("jwt") {
             route("/api/v1") {
                 route("/profile"){
                     get {
                         val id = call.parameters["id"] ?: return@get call.respond(HttpStatusCode.NotFound)
 
                         val principal = call.principal<JWTPrincipal>()
-                        val userLogin = principal?.getClaim("login", String::class) ?: throw UnauthorizedException()
+                        val userId = principal?.getClaim("id", String::class) ?: throw UnauthorizedException()
 
                         val user = userRepository.findById(id.toLong())
                             ?: throw NotFoundException("User not found")
@@ -123,7 +113,7 @@ fun Application.userRouting() {
                         val id = call.parameters["id"]?.toLong() ?: return@put call.respond(HttpStatusCode.NotFound)
 
                         val principal = call.principal<JWTPrincipal>()
-                        principal?.getClaim("login", String::class) ?: throw UnauthorizedException()
+                        principal?.getClaim("id", String::class) ?: throw UnauthorizedException()
 
                         val req = call.receive<UpdateProfileRequest>()
 
@@ -134,7 +124,6 @@ fun Application.userRouting() {
                             userRepository.updateAvatar(id, it)
                         }
                         req.password?.let {
-                            // require(it.length >= 8) { "Password too short" }
                             userRepository.updatePassword(id, hashingService.generateSaltedHash(it))
                         }
 
@@ -146,7 +135,7 @@ fun Application.userRouting() {
                     val id = call.parameters["id"]?.toLong() ?: return@post call.respond(HttpStatusCode.NotFound)
 
                     val principal = call.principal<JWTPrincipal>()
-                    val userLogin = principal?.getClaim("login", String::class) ?: throw UnauthorizedException()
+                    val userId = principal?.getClaim("id", String::class) ?: throw UnauthorizedException()
 
                     //TODO to support service
 
@@ -157,16 +146,16 @@ fun Application.userRouting() {
                     val id = call.parameters["id"]?.toLong() ?: return@post call.respond(HttpStatusCode.NotFound)
 
                     val principal = call.principal<JWTPrincipal>()
-                    val userLogin = principal?.getClaim("login", String::class) ?: throw UnauthorizedException()
+                    val userId = principal?.getClaim("id", String::class) ?: throw UnauthorizedException()
 
                     if (userRepository.findById(id) == null) {
                         throw NotFoundException("Target user not found")
                     }
-                    if (userRepository.findByLogin(userLogin) == null) {
+                    if (userRepository.findById(userId.toLong()) == null) {
                         throw NotFoundException("User not found")
                     }
 
-                    val success = followRepository.follow(userRepository.findByLogin(userLogin)!!.id, id)
+                    val success = followRepository.follow(userId.toLong(), id)
                     call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.NoContent)
                 }
 
@@ -174,16 +163,16 @@ fun Application.userRouting() {
                     val id = call.parameters["id"]?.toLong() ?: return@delete call.respond(HttpStatusCode.NotFound)
 
                     val principal = call.principal<JWTPrincipal>()
-                    val userLogin = principal?.getClaim("login", String::class) ?: throw UnauthorizedException()
+                    val userId = principal?.getClaim("id", String::class) ?: throw UnauthorizedException()
 
                     if (userRepository.findById(id) == null) {
                         throw NotFoundException("Target user not found")
                     }
-                    if (userRepository.findByLogin(userLogin) == null) {
+                    if (userRepository.findById(userId.toLong()) == null) {
                         throw NotFoundException("User not found")
                     }
 
-                    val success = followRepository.unfollow(userRepository.findByLogin(userLogin)!!.id, id)
+                    val success = followRepository.unfollow(userId.toLong(), id)
                     call.respond(if (success) HttpStatusCode.OK else HttpStatusCode.NoContent)
                 }
 
@@ -191,20 +180,20 @@ fun Application.userRouting() {
                     val id = call.parameters["id"]?.toLong() ?: return@post call.respond(HttpStatusCode.NotFound)
 
                     val principal = call.principal<JWTPrincipal>()
-                    val userLogin = principal?.getClaim("login", String::class) ?: throw UnauthorizedException()
+                    val userId = principal?.getClaim("id", String::class) ?: throw UnauthorizedException()
 
                     val req = call.receive<BanRequest>()
 
                     if (userRepository.findById(id) == null) {
                         throw NotFoundException("Target user not found")
                     }
-                    if (userRepository.findByLogin(userLogin) == null) {
+                    if (userRepository.findById(userId.toLong()) == null) {
                         throw NotFoundException("Moderator user not found")
                     }
 
                     banRepository.banUser(
                         targetUserId = id,
-                        moderatorId = userRepository.findByLogin(userLogin)!!.id,
+                        moderatorId = userId.toLong(),
                         durationDays = req.duration,
                         message = req.message
                     )
@@ -216,18 +205,18 @@ fun Application.userRouting() {
                     val id = call.parameters["id"]?.toLong() ?: return@delete call.respond(HttpStatusCode.NotFound)
 
                     val principal = call.principal<JWTPrincipal>()
-                    val userLogin = principal?.getClaim("login", String::class) ?: throw UnauthorizedException()
+                    val userId = principal?.getClaim("id", String::class) ?: throw UnauthorizedException()
 
                     if (userRepository.findById(id) == null) {
                         throw NotFoundException("Target user not found")
                     }
-                    if (userRepository.findByLogin(userLogin) == null) {
+                    if (userRepository.findById(userId.toLong()) == null) {
                         throw NotFoundException("Moderator user not found")
                     }
 
                     banRepository.unbanUser(
                         targetUserId = id,
-                        moderatorId = userRepository.findByLogin(userLogin)!!.id,
+                        moderatorId = userId.toLong(),
                     )
 
                     call.respond(HttpStatusCode.OK)

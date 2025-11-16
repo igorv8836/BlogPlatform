@@ -12,9 +12,7 @@ import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.routing.*
-import com.example.routes.SupportRoutes
 import com.example.routes.userRouting
-import com.example.security.configureSecurity
 
 fun main(args: Array<String>) {
     val config = getServiceConfig(ConfigName.USER_SERVICE)
@@ -36,7 +34,8 @@ fun Application.module(config: ServiceConfig) {
         ),
     )
 
-    configureSecurity(SupportRoutes.tokenConfig)
+    configureSecurity(config)
+
     configureCommonRouting()
     DatabaseFactory.initializationDatabase(
         config = config,
@@ -48,6 +47,6 @@ fun Application.module(config: ServiceConfig) {
     )
 
     routing {
-        userRouting()
+        userRouting(config)
     }
 }
