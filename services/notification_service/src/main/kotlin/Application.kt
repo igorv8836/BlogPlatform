@@ -6,7 +6,7 @@ import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig
 import com.example.data.dataModule
 import com.example.data.db.tables.NotificationTable
-import com.example.routes.commentsRouting
+import com.example.routes.notificationRouting
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -32,8 +32,20 @@ fun Application.module(config: ServiceConfig) {
         ),
     )
 
-    configureSecurity(config)
+//    val routing = "testing"
+//    configureRabbitMQ(
+//        config = config,
+//        configuration = {
+//            configureRabbitRouting(
+//                application = this@module,
+//                config = config,
+//                routing = routing
+//            )
+//        },
+//        routing = routing,
+//    )
 
+    configureSecurity(config)
     configureCommonRouting()
     DatabaseFactory.initializationDatabase(
         config = config,
@@ -43,6 +55,6 @@ fun Application.module(config: ServiceConfig) {
     )
 
     routing {
-        commentsRouting()
+        notificationRouting()
     }
 }

@@ -13,12 +13,11 @@ import notification.NotificationType
 import notification.request.NotificationRequest
 import org.koin.ktor.ext.inject
 
-fun Application.commentsRouting() {
+fun Application.notificationRouting() {
     val notificationRepository: NotificationRepository by inject()
-
     routing {
-        authenticate("jwt") {
-            route("/api/v1") {
+        route("/api/v1") {
+            authenticate("jwt") {
                 route("/notification") {
                     post {
                         val id = call.parameters["id"] ?: return@post call.respond(HttpStatusCode.NotFound)
