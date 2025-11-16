@@ -10,8 +10,11 @@ fun RoutingCall.userIdOrNull(): String? =
     principal<JWTPrincipal>()?.payload?.subject
 
 fun RoutingCall.userId(): String {
-    return principal<JWTPrincipal>()?.payload?.subject ?: throw UnauthorizedException()
+    return principal<UserIdPrincipal>()?.name ?: throw UnauthorizedException()
 }
+
+fun RoutingCall.tokenOrNull(): String? =
+    request.headers["Authorization"]?.removePrefix("Bearer ")?.trim()
 
 suspend fun RoutingCall.requireRole(role: Role) {
     val roles = principal<JWTPrincipal>()

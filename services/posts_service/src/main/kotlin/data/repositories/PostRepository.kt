@@ -1,9 +1,9 @@
-package org.example.data.repositories
+package data.repositories
 
 import com.example.utils.TimeUtils
+import data.db.tables.PostStatus
+import data.db.tables.PostsTable
 import io.ktor.server.plugins.*
-import org.example.data.db.tables.PostStatus
-import org.example.data.db.tables.PostsTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.like

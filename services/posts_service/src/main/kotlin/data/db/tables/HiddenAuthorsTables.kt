@@ -1,4 +1,4 @@
-package org.example.data.db.tables
+package data.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.datetime.timestampWithTimeZone

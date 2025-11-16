@@ -1,7 +1,8 @@
-package org.example.data.db.tables
+package data.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.UUIDTable
 import org.jetbrains.exposed.v1.datetime.timestampWithTimeZone
+
 
 object PostsTable : UUIDTable("posts") {
     val authorId = long("author_id")

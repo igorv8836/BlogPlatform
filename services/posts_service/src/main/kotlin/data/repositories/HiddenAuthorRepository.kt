@@ -1,8 +1,8 @@
-package org.example.data.repositories
+package data.repositories
 
 import com.example.utils.TimeUtils
+import data.db.tables.HiddenAuthorsTable
 import io.ktor.server.plugins.*
-import org.example.data.db.tables.HiddenAuthorsTable
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.deleteWhere

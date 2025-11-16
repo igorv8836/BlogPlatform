@@ -1,24 +1,31 @@
-package org.example.routes
+package routes
 
+import clients.UsersServiceClient
+import com.example.ClientConfig
+import com.example.clients.SupportServiceClient
+import com.example.createServiceHttpClient
+import com.example.utils.tokenOrNull
 import com.example.utils.userIdOrNull
+import data.repositories.HiddenAuthorRepository
+import data.repositories.PostRepository
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
-import org.example.data.repositories.ComplaintRepository
-import org.example.data.repositories.HiddenAuthorRepository
-import org.example.data.repositories.PostRepository
 import org.koin.ktor.ext.inject
+import posts.request.ComplaintRequest
 import posts.request.CreatePostRequest
-import posts.request.FileComplaintOnPostRequest
 import posts.request.UpdatePostRequest
 import java.util.*
 
 fun Application.configurePostsRouting() {
     val postRepository by inject<PostRepository>()
-    val complaintRepository by inject<ComplaintRepository>()
     val hiddenAuthorRepository by inject<HiddenAuthorRepository>()
+
+    val usersServiceClient by inject<UsersServiceClient>()
+    val supportServiceClient by inject<SupportServiceClient>()
 
     routing {
         route("/api/v1/posts") {
@@ -52,16 +59,6 @@ fun Application.configurePostsRouting() {
                 val userId: Long = call.userIdOrNull()?.toLong() ?: 100
                 val postId = UUID.fromString(call.parameters["postId"])
                 val response = postRepository.deletePost(postId, userId)
-                call.respond(response)
-            }
-
-            // File complaint on post
-            post("/complaints") {
-                val userId: Long = call.userIdOrNull()?.toLong() ?: 100
-                val postId = UUID.fromString(call.parameters["postId"])
-                    ?: throw IllegalArgumentException("Post ID required")
-                val request = call.receive<FileComplaintOnPostRequest>()
-                val response = complaintRepository.fileComplaintOnPost(postId, request, userId)
                 call.respond(response)
             }
 
@@ -111,6 +108,66 @@ fun Application.configurePostsRouting() {
                     call.respond(response)
                 } else {
                     call.respond(io.ktor.http.HttpStatusCode.NotFound)
+                }
+            }
+
+            route("/follow") {
+                post {
+                    val authorId: Long = call.request.queryParameters["authorId"]?.toLongOrNull()
+                        ?: throw BadRequestException("authorId is Null")
+                    val token: String = call.tokenOrNull() ?: throw BadRequestException("token is null")
+
+                    val response: HttpStatusCode = UsersServiceClient(
+                        createServiceHttpClient(ClientConfig(baseUrl = "http://0.0.0.0:8085"))
+                    ).followAuthor(
+                        authorId = authorId,
+                        jwtToken = token
+                    )
+
+                    call.respond(response)
+                }
+                delete {
+                    val authorId: Long = call.request.queryParameters["authorId"]?.toLongOrNull()
+                        ?: throw BadRequestException("authorId is Null")
+                    val token: String = call.tokenOrNull() ?: throw BadRequestException("token is null")
+
+                    val response: HttpStatusCode = usersServiceClient.unfollowAuthor(
+                        authorId = authorId,
+                        jwtToken = token
+                    )
+
+                    call.respond(response)
+                }
+            }
+
+            route("/complaint") {
+                post("/post") {
+                    val request = call.receive<ComplaintRequest>()
+                    val token: String = call.tokenOrNull() ?: throw BadRequestException("token is null")
+                    val postId: String = call.request.queryParameters["postId"]
+                        ?: throw BadRequestException("postId is Null")
+
+                    val response = supportServiceClient.complaint(
+                        subject = "Complaint on post with id=$postId",
+                        body = request.reason,
+                        jwtToken = token
+                    )
+
+                    call.respond(response)
+                }
+                post("/user") {
+                    val request = call.receive<ComplaintRequest>()
+                    val token: String = call.tokenOrNull() ?: throw BadRequestException("token is null")
+                    val userId: Long = call.request.queryParameters["userId"]?.toLongOrNull()
+                        ?: throw BadRequestException("userId is Null")
+
+                    val response = supportServiceClient.complaint(
+                        subject = "Complaint on user with id=$userId",
+                        body = request.reason,
+                        jwtToken = token
+                    )
+
+                    call.respond(response)
                 }
             }
         }

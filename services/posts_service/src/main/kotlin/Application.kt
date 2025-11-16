@@ -1,18 +1,18 @@
 package com.example
 
+import com.example.clients.clientsModule
 import com.example.commonPlugins.*
 import com.example.config.ConfigName
 import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig
+import data.dataModule
+import data.db.tables.HiddenAuthorsTable
+import data.db.tables.PostsTable
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.routing.*
-import org.example.data.dataModule
-import org.example.data.db.tables.ComplaintsTable
-import org.example.data.db.tables.HiddenAuthorsTable
-import org.example.data.db.tables.PostsTable
-import org.example.routes.configurePostsRouting
+import routes.configurePostsRouting
 
 fun main(args: Array<String>) {
     val config = getServiceConfig(ConfigName.POSTS_SERVICE)
@@ -30,7 +30,9 @@ fun Application.module(config: ServiceConfig) {
     configureSerialization()
     configureKoin(
         otherModules = listOf(
-            dataModule(),
+            coreClientModule(),
+            clientsModule(),
+            dataModule()
         ),
     )
 //    val routing = "testing"
@@ -52,7 +54,6 @@ fun Application.module(config: ServiceConfig) {
         config = config,
         tables = arrayOf(
             PostsTable,
-            ComplaintsTable,
             HiddenAuthorsTable
         )
     )
