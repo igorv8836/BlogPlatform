@@ -49,6 +49,8 @@ services:
       POSTGRES_PASSWORD: ${COMMENTS_DB_PASSWORD:-comments_password}
     volumes:
       - comments_db_data:/var/lib/postgresql/data
+    ports:
+      - ${COMMENTS_DB_PORT}:${DB_PORT}
 
   support_db:
     <<: *postgres-db
@@ -58,6 +60,8 @@ services:
       POSTGRES_PASSWORD: ${SUPPORT_DB_PASSWORD:-support_password}
     volumes:
       - support_db_data:/var/lib/postgresql/data
+    ports:
+      - ${SUPPORT_DB_PORT}:${DB_PORT}
 
   users_db:
     <<: *postgres-db
@@ -67,6 +71,8 @@ services:
       POSTGRES_PASSWORD: ${USER_DB_PASSWORD:-users_password}
     volumes:
       - users_db_data:/var/lib/postgresql/data
+    ports:
+      - ${USER_DB_PORT}:${DB_PORT}
 
   notification_db:
     <<: *postgres-db
@@ -85,6 +91,8 @@ services:
       POSTGRES_PASSWORD: ${POSTS_DB_PASSWORD:-posts_password}
     volumes:
       - posts_db_data:/var/lib/postgresql/data
+    ports:
+      - ${POSTS_DB_PORT}:${DB_PORT}
 
   wallet_db:
     <<: *postgres-db
@@ -94,6 +102,8 @@ services:
       POSTGRES_PASSWORD: ${WALLET_DB_PASSWORD:-wallet_password}
     volumes:
       - wallet_db_data:/var/lib/postgresql/data
+    ports:
+      - ${WALLET_DB_PORT}:${DB_PORT}
 
   comments-service:
     <<: *service-defaults
