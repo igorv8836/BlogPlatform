@@ -31,5 +31,4 @@ fun dataModule() = module {
     single {
         JwtTokenService()
     } bind TokenService::class
-    single { WalletServiceClient(get(named("wallet_client"))) }
 }

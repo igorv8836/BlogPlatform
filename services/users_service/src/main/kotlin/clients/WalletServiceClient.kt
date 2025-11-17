@@ -9,10 +9,10 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.append
 
-class WalletServiceClient(
+open class WalletServiceClient(
     private val httpClient: HttpClient
 ) {
-    suspend fun createWallet(
+    open suspend fun createWallet(
         jwtToken: String
     ): HttpStatusCode {
         try {

@@ -29,6 +29,7 @@ fun Application.module(config: ServiceConfig) {
     configureSerialization()
     configureKoin(
         otherModules = listOf(
+            commonModule(),
             clientsModule(),
             dataModule(),
         ),

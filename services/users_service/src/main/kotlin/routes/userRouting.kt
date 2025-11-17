@@ -72,9 +72,7 @@ fun Application.userRouting(config: ServiceConfig) {
                 )
             )
 
-            val response: HttpStatusCode = WalletServiceClient(
-                createServiceHttpClient(ClientConfig(baseUrl = "http://0.0.0.0:8084"))
-            ).createWallet(
+            val response: HttpStatusCode = walletServiceClient.createWallet(
                 jwtToken = token
             )
 
