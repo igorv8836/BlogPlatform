@@ -1,14 +1,19 @@
 package com.example.routes
 
+import com.example.ClientConfig
+import com.example.clients.SupportServiceClient
+import com.example.clients.WalletServiceClient
 import com.example.commonPlugins.TokenClaim
 import com.example.commonPlugins.TokenService
 import com.example.config.ServiceConfig
 import com.example.constants.ConflictException
 import com.example.constants.UnauthorizedException
+import com.example.createServiceHttpClient
 import com.example.data.repositories.BanRepository
 import com.example.data.repositories.FollowRepository
 import com.example.data.repositories.UserRepository
 import com.example.hashing.HashingService
+import com.example.utils.tokenOrNull
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -18,9 +23,11 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
+import posts.request.ComplaintRequest
 import users.request.*
 import users.response.AuthResponse
 import users.response.RecoveryResponse
+import kotlin.getValue
 
 fun Application.userRouting(config: ServiceConfig) {
     val userRepository: UserRepository by inject()
@@ -28,6 +35,9 @@ fun Application.userRouting(config: ServiceConfig) {
     val followRepository: FollowRepository by inject()
     val hashingService: HashingService by inject()
     val tokenService: TokenService by inject()
+
+    val walletServiceClient by inject<WalletServiceClient>()
+    val supportServiceClient by inject<SupportServiceClient>()
 
     routing {
         post("/api/v1/register") {
@@ -39,7 +49,7 @@ fun Application.userRouting(config: ServiceConfig) {
 
             val hashedPassword = hashingService.generateSaltedHash(req.password)
 
-            userRepository.register(req, hashedPassword)
+           userRepository.register(req, hashedPassword)
 
             val token = tokenService.generate(
                 config = config,
@@ -53,8 +63,14 @@ fun Application.userRouting(config: ServiceConfig) {
                 )
             )
 
+            val response: HttpStatusCode = WalletServiceClient(
+                createServiceHttpClient(ClientConfig(baseUrl = "http://0.0.0.0:8084"))
+            ).createWallet(
+                jwtToken = token
+            )
+
             call.respond(
-                status = HttpStatusCode.OK,
+                status = response,
                 message = AuthResponse(
                     token = token
                 )
@@ -134,12 +150,21 @@ fun Application.userRouting(config: ServiceConfig) {
                 post("/report") {
                     val id = call.parameters["id"]?.toLong() ?: return@post call.respond(HttpStatusCode.NotFound)
 
+                    val token: String = call.tokenOrNull() ?: throw BadRequestException("token is null")
+
                     val principal = call.principal<JWTPrincipal>()
                     val userId = principal?.getClaim("id", String::class) ?: throw UnauthorizedException()
 
-                    //TODO to support service
 
-                    call.respond(HttpStatusCode.Accepted)
+                    val request = call.receive<ComplaintRequest>()
+
+                    val response = supportServiceClient.complaint(
+                        subject = "Report user with id=$id",
+                        body = request.reason,
+                        jwtToken = token
+                    )
+
+                    call.respond(response)
                 }
 
                 post("/follow") {

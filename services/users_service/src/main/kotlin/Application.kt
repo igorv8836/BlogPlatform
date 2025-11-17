@@ -1,5 +1,6 @@
 package com.example
 
+import com.example.clients.clientsModule
 import com.example.commonPlugins.*
 import com.example.config.ConfigName
 import com.example.config.ServiceConfig
@@ -30,12 +31,13 @@ fun Application.module(config: ServiceConfig) {
     configureSerialization()
     configureKoin(
         otherModules = listOf(
+            coreClientModule(),
+            clientsModule(),
             dataModule(),
         ),
     )
 
     configureSecurity(config)
-
     configureCommonRouting()
     DatabaseFactory.initializationDatabase(
         config = config,
@@ -45,8 +47,5 @@ fun Application.module(config: ServiceConfig) {
             BanTable
         )
     )
-
-    routing {
-        userRouting(config)
-    }
+    userRouting(config)
 }

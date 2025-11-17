@@ -34,4 +34,12 @@ fun coreClientModule() = module {
             )
         )
     }
+
+    single(named("wallet_client")) {
+        createServiceHttpClient(
+            ClientConfig(
+                baseUrl = BASE_URL + WALLET_SERVICE_PORT
+            )
+        )
+    }
 }
