@@ -125,7 +125,7 @@ fun Application.testModule(config: ServiceConfig) {
         )
     )
 
-    configurePostsRouting()
+    configurePostsRouting(config)
 }
 
 class PostsRoutingTest {

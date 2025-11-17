@@ -2,10 +2,14 @@ package routes
 
 import clients.UsersServiceClient
 import com.example.clients.SupportServiceClient
+import com.example.config.ServiceConfig
 import com.example.utils.tokenOrNull
 import com.example.utils.userIdOrNull
 import data.repositories.HiddenAuthorRepository
 import data.repositories.PostRepository
+import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicProperties
+import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.basicPublish
+import io.github.damir.denis.tudor.ktor.server.rabbitmq.dsl.rabbitmq
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -13,13 +17,36 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import notification.NotificationType
+import notification.request.NotificationAsyncRequest
 import org.koin.ktor.ext.inject
 import posts.request.ComplaintRequest
 import posts.request.CreatePostRequest
 import posts.request.UpdatePostRequest
 import java.util.*
 
-fun Application.configurePostsRouting() {
+const val NOTIFICATION_ROUTING_KEY = "notification-service"
+
+fun Application.publishToNotificationExchange(
+    request: NotificationAsyncRequest,
+    config: ServiceConfig
+) {
+    rabbitmq {
+        basicPublish {
+            exchange = "notification.exchange"
+            routingKey = NOTIFICATION_ROUTING_KEY
+            properties = basicProperties {
+                correlationId = UUID.randomUUID().toString()
+                replyTo = config.ktor.jwt.audience
+            }
+            message {
+                request
+            }
+        }
+    }
+}
+
+fun Application.configurePostsRouting(config: ServiceConfig) {
     val postRepository by inject<PostRepository>()
     val hiddenAuthorRepository by inject<HiddenAuthorRepository>()
 
@@ -31,11 +58,23 @@ fun Application.configurePostsRouting() {
             route("/api/v1/posts") {
                 // Create a new post
                 post {
+
                     val userId: Long = call.userIdOrNull()?.toLong()
                         ?: throw BadRequestException("userId is ${call.userIdOrNull()}")
                     val request = call.receive<CreatePostRequest>()
                     val response = postRepository.createPost(request, userId)
+
                     if (response != null) {
+                        publishToNotificationExchange(
+                            NotificationAsyncRequest.NotifySubscribersNotificationRequest(
+                                authorUserId = userId,
+                                token = call.tokenOrNull()
+                                    ?: throw BadRequestException("token is null"),
+                                message = "Пост автора=${userId} создан",
+                                notificationType = NotificationType.BROADCAST
+                            ) as NotificationAsyncRequest,
+                            config
+                        )
                         call.respond(response)
                     } else {
                         call.respond(HttpStatusCode.InternalServerError)

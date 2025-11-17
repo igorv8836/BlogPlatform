@@ -15,6 +15,8 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import notification.NotificationType
+import notification.request.NotificationAsyncRequest
 import org.koin.ktor.ext.inject
 import payment.request.PaymentAsyncRequest
 import wallet.Currency
@@ -26,6 +28,31 @@ import wallet.response.SupportAuthorResponse
 import java.util.*
 
 const val PAYMENT_ROUTING_KEY = "payment-service"
+const val NOTIFICATION_ROUTING_KEY = "notification-service"
+
+fun Application.publishToNotificationExchange(
+    targetUserId: Long,
+    notificationType: NotificationType,
+    config: ServiceConfig
+) {
+    rabbitmq {
+        basicPublish {
+            exchange = "notification.exchange"
+            routingKey = NOTIFICATION_ROUTING_KEY
+            properties = basicProperties {
+                correlationId = UUID.randomUUID().toString()
+                replyTo = config.ktor.jwt.audience
+            }
+            message {
+                NotificationAsyncRequest.CreateNotificationRequest(
+                    targetUserId = targetUserId,
+                    message = "Отправлено сообщение типа $notificationType",
+                    notificationType = notificationType
+                ) as NotificationAsyncRequest
+            }
+        }
+    }
+}
 
 fun Application.configureWalletRouting(config: ServiceConfig) {
     val walletRepository by inject<WalletRepository>()
@@ -95,6 +122,12 @@ fun Application.configureWalletRouting(config: ServiceConfig) {
                         }
                     }
 
+                    publishToNotificationExchange(
+                        userId,
+                        NotificationType.WITHDRAW,
+                        config
+                    )
+
                     call.respond(withdrawalRequestRepository.requestWithdrawal(userId, request))
                 }
 
@@ -120,6 +153,12 @@ fun Application.configureWalletRouting(config: ServiceConfig) {
                             }
                         }
                     }
+
+                    publishToNotificationExchange(
+                        request.authorId,
+                        NotificationType.SUBSCRIPTION,
+                        config
+                    )
 
                     val response = subscriptionRepository.subscribeToAuthor(userId, request)
                     call.respond(response)
@@ -159,6 +198,12 @@ fun Application.configureWalletRouting(config: ServiceConfig) {
                             }
                         }
                     }
+
+                    publishToNotificationExchange(
+                        request.authorId,
+                        NotificationType.MONEY_SUPPORT_RECEIVE,
+                        config
+                    )
 
                     val supportId = UUID.randomUUID().toString()
                     val now = java.time.LocalDateTime.now().toString()

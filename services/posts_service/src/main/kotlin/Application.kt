@@ -11,6 +11,7 @@ import data.db.tables.PostsTable
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import plugins.configureRabbitRouting
 import routes.configurePostsRouting
 
 fun main(args: Array<String>) {
@@ -34,18 +35,18 @@ fun Application.module(config: ServiceConfig) {
             dataModule()
         ),
     )
-//    val routing = "testing"
-//    configureRabbitMQ(
-//        config = config,
-//        configuration = {
-//            configureRabbitRouting(
-//                application = this@module,
-//                config = config,
-//                routing = routing
-//            )
-//        },
-//        routing = routing,
-//    )
+    val routing = config.ktor.jwt.audience
+    configureRabbitMQ(
+        config = config,
+        configuration = {
+            configureRabbitRouting(
+                application = this@module,
+                config = config,
+                routing = routing
+            )
+        },
+        routing = routing,
+    )
 
     configureSecurity(config)
     configureCommonRouting()
@@ -57,5 +58,5 @@ fun Application.module(config: ServiceConfig) {
         )
     )
 
-    configurePostsRouting()
+    configurePostsRouting(config)
 }
