@@ -1,16 +1,17 @@
 package com.example
 
+import com.example.clients.clientsModule
 import com.example.commonPlugins.*
 import com.example.config.ConfigName
 import com.example.config.ServiceConfig
 import com.example.config.getServiceConfig
 import com.example.data.dataModule
 import com.example.data.db.tables.NotificationTable
+import com.example.plugins.configureRabbitRouting
 import com.example.routes.notificationRouting
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.routing.*
 
 fun main(args: Array<String>) {
     val config = getServiceConfig(ConfigName.NOTIFICATION_SERVICE)
@@ -28,22 +29,10 @@ fun Application.module(config: ServiceConfig) {
     configureSerialization()
     configureKoin(
         otherModules = listOf(
+            clientsModule(),
             dataModule(),
         ),
     )
-
-//    val routing = "testing"
-//    configureRabbitMQ(
-//        config = config,
-//        configuration = {
-//            configureRabbitRouting(
-//                application = this@module,
-//                config = config,
-//                routing = routing
-//            )
-//        },
-//        routing = routing,
-//    )
 
     configureSecurity(config)
     configureCommonRouting()
@@ -54,7 +43,19 @@ fun Application.module(config: ServiceConfig) {
         )
     )
 
-    routing {
-        notificationRouting()
-    }
+    val routing = config.ktor.jwt.audience
+
+    configureRabbitMQ(
+        config = config,
+        configuration = {
+            configureRabbitRouting(
+                application = this@module,
+                config = config,
+                routing = routing
+            )
+        },
+        routing = routing,
+    )
+
+    notificationRouting()
 }

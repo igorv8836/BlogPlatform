@@ -9,6 +9,7 @@ import com.example.data.dataModule
 import com.example.data.db.tables.BanTable
 import com.example.data.db.tables.FollowTable
 import com.example.data.db.tables.UserTable
+import com.example.plugins.configureRabbitRouting
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -35,6 +36,19 @@ fun Application.module(config: ServiceConfig) {
             clientsModule(),
             dataModule(),
         ),
+    )
+
+    val routing = config.ktor.jwt.audience
+    configureRabbitMQ(
+        config = config,
+        configuration = {
+            configureRabbitRouting(
+                application = this@module,
+                config = config,
+                routing = routing
+            )
+        },
+        routing = routing,
     )
 
     configureSecurity(config)

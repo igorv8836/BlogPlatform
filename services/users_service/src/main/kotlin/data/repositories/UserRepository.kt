@@ -131,8 +131,7 @@ class UserRepositoryImpl: UserRepository {
             .select(UserTable.hashPassword, UserTable.salt)
             .where { UserTable.login eq login }
             .firstOrNull()
-            ?: throw AuthenticationException("Invalid credentials") // Безопасная обработка отсутствия пользователя
-
+            ?: throw AuthenticationException("Invalid credentials")
         SaltedHash(
             hash = user[UserTable.hashPassword],
             salt = user[UserTable.salt]

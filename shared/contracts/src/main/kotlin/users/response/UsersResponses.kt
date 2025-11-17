@@ -8,7 +8,6 @@ data class AuthResponse(
     val token: String
 )
 
-//TODO Should think about protection of account. Maybe add some recovery question or something else
 @Serializable
 data class RecoveryResponse(
     val message: String,
@@ -18,8 +17,13 @@ data class RecoveryResponse(
 data class UserResponse(
     val id: Long,
     val login: String,
-    val creationDate: String, //TODO change to Date
+    val creationDate: String,
     val role: UserRole,
     val desc: String,
-    val avatar: String? //TODO DO NOT forget to change this to an image
+    val avatar: String?
+)
+
+@Serializable
+data class FollowersResponse(
+    val followersId: List<Long>,
 )

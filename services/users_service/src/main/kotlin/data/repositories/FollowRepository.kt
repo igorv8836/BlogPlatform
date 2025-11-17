@@ -11,14 +11,15 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import users.response.FollowersResponse
 import users.response.UserResponse
 
 interface FollowRepository {
     fun follow(followerId: Long, followeeId: Long): Boolean
     fun unfollow(followerId: Long, followeeId: Long): Boolean
     fun isFollowing(followerId: Long, followeeId: Long): Boolean
-    fun getFollowers(userId: Long, limit: Int = 20, offset: Int = 0): List<UserResponse>
-    fun getFollowing(userId: Long, limit: Int = 20, offset: Int = 0): List<UserResponse>
+    fun getFollowers(userId: Long): FollowersResponse
+    fun getFollowing(userId: Long): List<UserResponse>
 }
 
 class FollowRepositoryImpl(
@@ -59,32 +60,24 @@ class FollowRepositoryImpl(
             .empty().not()
     }
 
-    override fun getFollowers(userId: Long, limit: Int, offset: Int ): List<UserResponse> = transaction {
-        FollowTable
+    override fun getFollowers(userId: Long): FollowersResponse = transaction {
+        val followersId = FollowTable
             .innerJoin(UserTable, { FollowTable.followerId }, { UserTable.id })
             .select(UserTable.columns)
             .where { FollowTable.followeeId eq userId }
             .orderBy(FollowTable.createdAt, SortOrder.DESC)
-            .limit(limit)
             .map { row ->
-                UserResponse(
-                    id = row[UserTable.id],
-                    login = row[UserTable.login],
-                    creationDate = row[UserTable.creationDate].toString(),
-                    role =row[UserTable.role],
-                    desc = row[UserTable.desc],
-                    avatar = row[UserTable.avatar],
-                )
+                row[UserTable.id]
             }
+        FollowersResponse(followersId)
     }
 
-    override fun getFollowing(userId: Long, limit: Int, offset: Int): List<UserResponse> = transaction {
+    override fun getFollowing(userId: Long): List<UserResponse> = transaction {
         FollowTable
             .innerJoin(UserTable, { FollowTable.followerId }, { UserTable.id })
             .select(UserTable.columns)
             .where { FollowTable.followerId eq userId }
             .orderBy(FollowTable.createdAt, SortOrder.DESC)
-            .limit(limit)
             .map { row ->
                 UserResponse(
                     id = row[UserTable.id],
