@@ -33,7 +33,7 @@ class JwtTokenService: TokenService {
         vararg tokenClaim: TokenClaim
     ): String {
         var token = JWT.create()
-            .withAudience(config.ktor.jwt.audience)
+            .withAudience("all")
             .withIssuer(config.ktor.jwt.issuer)
             .withExpiresAt(Date(System.currentTimeMillis() + config.ktor.jwt.expirationTime))
 
@@ -56,7 +56,7 @@ fun Application.configureSecurity(config: ServiceConfig) {
 
     val verifier: JWTVerifier = JWT
         .require(algorithm)
-        .withAudience(config.ktor.jwt.audience)
+        .withAudience("all")
         .withIssuer(config.ktor.jwt.issuer)
         .build()
 
@@ -83,6 +83,7 @@ fun Application.configureSecurity(config: ServiceConfig) {
 
             validate { cred ->
                 val payload = cred.payload
+                print(payload.audience)
                 val audOk = payload.audience?.contains(config.ktor.jwt.audience) == true ||
                         payload.audience.contains("all")
 

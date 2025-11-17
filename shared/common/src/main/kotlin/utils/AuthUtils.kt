@@ -7,7 +7,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.routing.*
 
 fun RoutingCall.userIdOrNull(): String? =
-    principal<JWTPrincipal>()?.payload?.subject
+    principal<JWTPrincipal>()?.getClaim("id", String::class)
 
 fun RoutingCall.userId(): String {
     return principal<UserIdPrincipal>()?.name ?: throw UnauthorizedException()
