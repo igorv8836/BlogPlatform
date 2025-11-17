@@ -11,7 +11,6 @@ import data.db.tables.PostsTable
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
-import io.ktor.server.routing.*
 import routes.configurePostsRouting
 
 fun main(args: Array<String>) {
@@ -58,7 +57,5 @@ fun Application.module(config: ServiceConfig) {
         )
     )
 
-    routing {
-        configurePostsRouting()
-    }
+    configurePostsRouting()
 }

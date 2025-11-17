@@ -42,7 +42,14 @@ class PostRepository {
     }
 
     fun getPostById(postId: UUID): PostResponse? {
-        return transaction { findById(postId) }
+        return transaction {
+            findById(postId)?.let { post ->
+                if (post.status == PostStatus.DELETED.name) {
+                    return@transaction null
+                }
+                post
+            }
+        }
     }
 
     fun updatePost(postId: UUID, update: UpdatePostRequest, userId: Long): PostResponse? {

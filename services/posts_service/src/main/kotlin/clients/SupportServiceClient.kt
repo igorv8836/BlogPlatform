@@ -8,10 +8,10 @@ import io.ktor.http.*
 import support.request.CreateTicketRequest
 import support.response.TicketResponse
 
-class SupportServiceClient(
+open class SupportServiceClient(
     private val httpClient: HttpClient
 ) {
-    suspend fun complaint(
+    open suspend fun complaint(
         subject: String,
         body: String,
         jwtToken: String

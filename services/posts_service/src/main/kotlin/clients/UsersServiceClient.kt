@@ -6,10 +6,10 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 
 
-class UsersServiceClient(
+open class UsersServiceClient(
     private val httpClient: HttpClient
 ) {
-    suspend fun followAuthor(
+    open suspend fun followAuthor(
         authorId: Long,
         jwtToken: String
     ): HttpStatusCode {
@@ -30,7 +30,7 @@ class UsersServiceClient(
         }
     }
 
-    suspend fun unfollowAuthor(
+    open suspend fun unfollowAuthor(
         authorId: Long,
         jwtToken: String
     ): HttpStatusCode {
