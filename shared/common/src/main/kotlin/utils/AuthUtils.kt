@@ -10,7 +10,7 @@ fun RoutingCall.userIdOrNull(): String? =
     principal<JWTPrincipal>()?.getClaim("id", String::class)
 
 fun RoutingCall.userId(): String {
-    return principal<UserIdPrincipal>()?.name ?: throw UnauthorizedException()
+    return principal<JWTPrincipal>()?.getClaim("id", String::class) ?: throw UnauthorizedException()
 }
 
 fun RoutingCall.tokenOrNull(): String? =
