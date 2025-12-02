@@ -67,7 +67,7 @@ fun Application.configureSecurity(config: ServiceConfig) {
                 .withIssuer(config.ktor.jwt.issuer)
                 .withSubject("100")
                 .withAudience("all")
-                .withClaim("userId", "100")
+                .withClaim("id", "100")
                 .withArrayClaim("roles", arrayOf("admin", "moderator"))
                 .withExpiresAt(Date(2025, 11, 11))
                 .sign(algorithm)

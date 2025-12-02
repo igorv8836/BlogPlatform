@@ -191,7 +191,8 @@ class CommentRepository {
 
     private fun loadMentions(commentId: UUID): List<String> =
         MentionsTable
-            .select(MentionsTable.commentId eq commentId)
+            .selectAll()
+            .where(MentionsTable.commentId eq commentId)
             .orderBy(MentionsTable.createdAt, SortOrder.ASC)
             .map { it[MentionsTable.mentionedUserId] }
 
