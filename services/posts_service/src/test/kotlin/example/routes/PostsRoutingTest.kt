@@ -21,6 +21,7 @@ import io.ktor.server.testing.*
 import kotlinx.datetime.toDeprecatedInstant
 import kotlinx.serialization.json.*
 import org.koin.dsl.module
+import plugins.configureRabbitRouting
 import posts.request.CreatePostRequest
 import posts.request.UpdatePostRequest
 import routes.configurePostsRouting
@@ -102,18 +103,18 @@ fun Application.testModule(config: ServiceConfig) {
             testClientsModule()
         ),
     )
-//    val routing = "testing"
-//    configureRabbitMQ(
-//        config = config,
-//        configuration = {
-//            configureRabbitRouting(
-//                application = this@module,
-//                config = config,
-//                routing = routing
-//            )
-//        },
-//        routing = routing,
-//    )
+    val routing = "testing"
+    configureRabbitMQ(
+        config = config,
+        configuration = {
+            configureRabbitRouting(
+                application = this@testModule,
+                config = config,
+                routing = routing
+            )
+        },
+        routing = routing,
+    )
 
     configureSecurity(config)
     configureCommonRouting()
