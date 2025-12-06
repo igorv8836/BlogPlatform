@@ -182,7 +182,7 @@ class CommentRepository {
         }
     }
 
-    private fun sanitizeMentions(mentions: List<String>?): List<String> =
+    internal fun sanitizeMentions(mentions: List<String>?): List<String> =
         mentions
             .orEmpty()
             .map(String::trim)
@@ -197,7 +197,7 @@ class CommentRepository {
             .map { it[MentionsTable.mentionedUserId] }
 
     @OptIn(ExperimentalTime::class)
-    private fun toResponse(row: ResultRow): CommentResponse {
+    internal fun toResponse(row: ResultRow): CommentResponse {
         val commentId = row[CommentsTable.id].value
         return CommentResponse(
             id = commentId.toString(),
@@ -216,7 +216,7 @@ class CommentRepository {
         )
     }
 
-    private fun uuidEntityId(rawId: String): EntityID<UUID> =
+    internal fun uuidEntityId(rawId: String): EntityID<UUID> =
         runCatching { UUID.fromString(rawId) }
             .map { EntityID(it, CommentsTable) }
             .getOrElse { throw BadRequestException("Invalid parent comment id") }
