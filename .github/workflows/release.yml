@@ -1,0 +1,115 @@
+name: Release - Build & Deploy
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: "Опционально: указать тег образа (по умолчанию tag или SHA)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run tests
+        run: ./gradlew test --no-daemon
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [comments_service]
+    env:
+      YC_REGISTRY_ID: ${{ vars.YC_REGISTRY_ID || secrets.YC_REGISTRY_ID }}
+      YC_CLOUD_ID: ${{ secrets.YC_CLOUD_ID }}
+      YC_FOLDER_ID: ${{ secrets.YC_FOLDER_ID }}
+      YC_RUNTIME_SA_ID: ${{ secrets.YC_RUNTIME_SA_ID }}
+      YC_SA_JSON_KEY: ${{ secrets.YC_SA_JSON_KEY }}
+      COMMENTS_SERVICE_JDBC_URL: ${{ secrets.COMMENTS_SERVICE_JDBC_URL }}
+      COMMENTS_SERVICE_DB_USER: ${{ secrets.COMMENTS_SERVICE_DB_USER }}
+      COMMENTS_SERVICE_DB_PASSWORD: ${{ secrets.COMMENTS_SERVICE_DB_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Yandex Cloud CLI
+        run: |
+          curl -sSL https://storage.yandexcloud.net/yandexcloud-yc/install.sh | bash
+          echo "${HOME}/yandex-cloud/bin" >> "$GITHUB_PATH"
+
+      - name: Configure Yandex Cloud
+        run: |
+          mkdir -p "${HOME}/.config/yandex-cloud"
+          echo "${YC_SA_JSON_KEY}" > "${HOME}/.config/yandex-cloud/sa-key.json"
+          yc config set service-account-key "${HOME}/.config/yandex-cloud/sa-key.json"
+          yc config set cloud-id "${YC_CLOUD_ID}"
+          yc config set folder-id "${YC_FOLDER_ID}"
+
+      - name: Docker login to YCR
+        run: yc container registry configure-docker --registry-id "${YC_REGISTRY_ID}"
+
+      - name: Resolve image tag
+        id: meta
+        env:
+          MANUAL_IMAGE_TAG: ${{ github.event.inputs.image-tag }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ -n "${MANUAL_IMAGE_TAG}" ]; then
+            tag="${MANUAL_IMAGE_TAG}"
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag="${GITHUB_REF_NAME}"
+          else
+            tag="${GITHUB_SHA}"
+          fi
+
+          image="cr.yandex/${YC_REGISTRY_ID}/${{ matrix.service }}:${tag}"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg SERVICE_NAME=${{ matrix.service }} \
+            -f docker/service.Dockerfile \
+            -t ${{ steps.meta.outputs.image }} \
+            .
+
+      - name: Push Docker image
+        run: docker push ${{ steps.meta.outputs.image }}
+
+      - name: Ensure serverless container exists
+        run: |
+          yc serverless container get --name ${{ matrix.service }} >/dev/null 2>&1 || \
+            yc serverless container create --name ${{ matrix.service }} --service-account-id "${YC_RUNTIME_SA_ID}"
+
+      - name: Deploy to Yandex Cloud Serverless Containers
+        run: |
+          yc serverless container revision deploy \
+            --container-name ${{ matrix.service }} \
+            --image ${{ steps.meta.outputs.image }} \
+            --service-account-id "${YC_RUNTIME_SA_ID}" \
+            --memory 512M \
+            --cores 1 \
+            --concurrency 8 \
+            --execution-timeout 30s

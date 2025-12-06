@@ -24,6 +24,8 @@ fun Application.configureRabbitMQ(
         uri = config.ktor.rabbitmq.uri
         defaultConnectionName = config.ktor.rabbitmq.defaultConnectionName
         dispatcherThreadPollSize = config.ktor.rabbitmq.dispatcherThreadPollSize
+        connectionAttempts = config.ktor.rabbitmq.connectionAttempts
+        attemptDelay = config.ktor.rabbitmq.attemptDelay
         tlsEnabled = config.ktor.rabbitmq.tls.enabled
         scope = rabbitMQScope
     }
