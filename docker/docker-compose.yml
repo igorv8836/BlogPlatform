@@ -20,6 +20,9 @@ x-service-defaults: &service-defaults
   networks:
     - blog
 
+x-logging: &docker-logging
+  driver: "json-file"
+
 services:
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -51,6 +54,7 @@ services:
       - comments_db_data:/var/lib/postgresql/data
     ports:
       - ${COMMENTS_DB_PORT}:${DB_PORT}
+    logging: *docker-logging
 
   support_db:
     <<: *postgres-db
@@ -62,6 +66,7 @@ services:
       - support_db_data:/var/lib/postgresql/data
     ports:
       - ${SUPPORT_DB_PORT}:${DB_PORT}
+    logging: *docker-logging
 
   users_db:
     <<: *postgres-db
@@ -73,6 +78,7 @@ services:
       - users_db_data:/var/lib/postgresql/data
     ports:
       - ${USER_DB_PORT}:${DB_PORT}
+    logging: *docker-logging
 
   notification_db:
     <<: *postgres-db
@@ -82,6 +88,7 @@ services:
       POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-notification_password}
     volumes:
       - notification_db_data:/var/lib/postgresql/data
+    logging: *docker-logging
 
   posts_db:
     <<: *postgres-db
@@ -93,6 +100,7 @@ services:
       - posts_db_data:/var/lib/postgresql/data
     ports:
       - ${POSTS_DB_PORT}:${DB_PORT}
+    logging: *docker-logging
 
   wallet_db:
     <<: *postgres-db
@@ -104,6 +112,7 @@ services:
       - wallet_db_data:/var/lib/postgresql/data
     ports:
       - ${WALLET_DB_PORT}:${DB_PORT}
+    logging: *docker-logging
 
   comments-service:
     <<: *service-defaults
@@ -126,6 +135,7 @@ services:
         condition: service_healthy
     ports:
       - "${COMMENTS_SERVICE_PORT:-8081}:${COMMENTS_SERVICE_PORT:-8081}"
+    logging: *docker-logging
 
   support-service:
     <<: *service-defaults
@@ -148,6 +158,7 @@ services:
         condition: service_healthy
     ports:
       - "${SUPPORT_SERVICE_PORT:-8082}:${SUPPORT_SERVICE_PORT:-8082}"
+    logging: *docker-logging
 
   users-service:
     <<: *service-defaults
@@ -170,6 +181,7 @@ services:
         condition: service_healthy
     ports:
       - "${USER_SERVICE_PORT:-8085}:${USER_SERVICE_PORT:-8085}"
+    logging: *docker-logging
 
   notification-service:
     <<: *service-defaults
@@ -192,6 +204,7 @@ services:
         condition: service_healthy
     ports:
       - "${NOTIFICATION_SERVICE_PORT:-8086}:${NOTIFICATION_SERVICE_PORT:-8086}"
+    logging: *docker-logging
 
   posts-service:
     <<: *service-defaults
@@ -214,6 +227,7 @@ services:
         condition: service_healthy
     ports:
       - "${POSTS_SERVICE_PORT:-8083}:${POSTS_SERVICE_PORT:-8083}"
+    logging: *docker-logging
 
   wallet-service:
     <<: *service-defaults
@@ -236,6 +250,7 @@ services:
         condition: service_healthy
     ports:
       - "${WALLET_SERVICE_PORT:-8084}:${WALLET_SERVICE_PORT:-8084}"
+    logging: *docker-logging
 
   payment-service:
     <<: *service-defaults
@@ -253,6 +268,36 @@ services:
         condition: service_healthy
     ports:
       - "${PAYMENT_SERVICE_PORT:-8087}:${PAYMENT_SERVICE_PORT:-8087}"
+    logging: *docker-logging
+
+  # Log
+  loki-stdout:
+    image: grafana/loki:2.9.0
+    container_name: loki-stdout
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - monitoring
+
+  promtail-stdout:
+    image: grafana/promtail:2.9.0
+    container_name: promtail-stdout
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./promtail-stdout.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
 
 volumes:
   rabbitmq_data:
@@ -265,3 +310,4 @@ volumes:
 
 networks:
   blog:
+  monitoring:
